@@ -1,0 +1,199 @@
+rm(list = ls())
+################
+#Saved in CBK files as: pleiotropy_network_for_Alex_CBK_markup_dean_mods.r
+
+
+###Required files:
+### (1) Merged tab summary and pleiotropy matrix file generated from script (7-2), containing common SI tracker column 
+        #IMPORTANT CHECK: trait names in r script vectors must match up with trait names in file column or row headers, else matrices will not be defined
+
+###Output generated:
+### (1) Pleiotropy graphs for entire QTL network
+
+
+
+
+
+#read in pleiotropy matrix
+setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(14)Pleiotropy")
+home.dir <- getwd()
+data <- read.table (paste(home.dir, "\\Matrix_of_Pleiotropy_Results_SI01\\Pleiotropic.Output.Matrix.for.Carots.SI01.TEST.TAB.SUM.MERGE.txt", sep = ""), head = TRUE)
+
+#select subset of columns 
+pleio.matrix <- cbind(data[,1], data[,6], data[,11:19])
+colnames(pleio.matrix) <- c("Original_Trait", "Trait_Marker", "ACAR", "PHYF", "BCRY", "LUT", "ZEI", "TOTCAR", "BCAR", "ZEA", "THLYC")
+
+
+
+######################################################################
+#generate matrix of 1, 0 and -1 specifying if correlation is significant at a=0.01, r=0.495  
+#specify the order in which you would like the traits to show up in the network, note that the linear vector will be displayed clockwise                       
+desired.column.order <- c("Trait_Marker", "Original_Trait", "ACAR", "ZEI", "LUT", "PHYF", "THLYC", "ZEA", "BCRY", "BCAR", "TOTCAR")  
+no.totcar.column.order <- c("Trait_Marker", "Original_Trait", "ACAR", "ZEI", "LUT", "PHYF", "THLYC", "ZEA", "BCRY", "BCAR")
+
+#Reorder the trait names in your data file according to desired.column.order
+pleio.matrix <- pleio.matrix[,desired.column.order]    #traits put in desired order for network output, according to Dean
+
+#removing the "total carotenoid" trait to make the colnames vector look like no.totcar.column.order in line 13
+pleio.matrix.only.traits <- pleio.matrix[,1:10]
+
+#you can use this conditional statement if you want to have flexibility to compare trait vector with and without total traits
+totals.included = FALSE #INPUT REQUIRED*****************
+if (totals.included == TRUE) {pleio.matrix <- pleio.matrix
+  }else{pleio.matrix <- pleio.matrix.only.traits}
+
+#generate placeholder matrix to hold sig pos, sig neg, non sig correlations, and identities
+new.pleio.matrix <- matrix(NA, nrow(pleio.matrix), ncol(pleio.matrix))                
+colnames(new.pleio.matrix) <- colnames(pleio.matrix)
+
+#columns of interest [,3:11]; rows of interest [1:nrow]
+traits <- colnames(pleio.matrix[3:ncol(pleio.matrix)])                                
+col.of.interest <- c(3:length(pleio.matrix))                                            
+
+#identify significant correlations
+for (i in 1:nrow(pleio.matrix)){
+  for (j in col.of.interest){
+    if (pleio.matrix[i,j] == 1) {new.pleio.matrix[i,j] = NA
+    }else if (pleio.matrix[i,j] >= 0.495) {new.pleio.matrix[i,j] = 1
+    }else if (pleio.matrix[i,j] <= -0.495) {new.pleio.matrix[i,j] = -1 
+    }else{new.pleio.matrix[i,j] = 0} 
+  } # end j columns 
+} #end i rows of pleio.matrix
+pleio.matrix <- as.data.frame(pleio.matrix)
+new.pleio.matrix <- as.data.frame(new.pleio.matrix)
+
+#adds original trait identifiers to pos, neg, non-sig matrix
+rename.pleio.matrix <- cbind(pleio.matrix[,2], new.pleio.matrix [,3:ncol(new.pleio.matrix)])  
+  
+#######################################################################  
+#generate frequency matrices 
+  ########################POS Matrix#################################
+  #recording total number of QTL for a given trait; recording total number of positive correlations between original and tested trait [i,j]
+   sig.pos.freq.matrix <- NULL
+   for (i in traits){  
+        orig.trait <- rename.pleio.matrix[which((rename.pleio.matrix[,1]) == i),] 
+        freq.for.orig.trait <- NULL
+       for (j in 2:ncol(orig.trait)){      #where j equals tested trait
+       
+        #sum QTL in each column
+        total.QTL <- length(which(is.na(orig.trait[,j])))
+        freq.pos <- length(which((orig.trait[,j]) == "1"))
+        
+        #record QTL frequencies for each tested trait
+        record.freq <- total.QTL + freq.pos                  
+        freq.for.orig.trait <- c(freq.for.orig.trait, record.freq)
+       } #end j loop
+   
+   #generate matrix for positive correlations    
+   sig.pos.freq.matrix <- rbind(sig.pos.freq.matrix, freq.for.orig.trait) 
+    } #end i loop
+   colnames(sig.pos.freq.matrix) <- traits
+   rownames(sig.pos.freq.matrix) <- traits
+  
+  ########################NEG Matrix#################################
+  #recording total number of QTL for a given trait; recording total number of negative correlations between original and tested trait [i,j]
+   sig.neg.freq.matrix <- NULL
+   for (i in traits){  
+        orig.trait <- rename.pleio.matrix[which((rename.pleio.matrix[,1]) == i),] 
+        freq.for.orig.trait <- NULL
+       for (j in 2:ncol(orig.trait)){      #where j equals tested trait
+       
+        #sum QTL in each column
+        total.QTL <- length(which(is.na(orig.trait[,j])))
+        freq.neg <- length(which((orig.trait[,j]) == "-1"))
+        
+        #record QTL frequencies for each tested trait
+        record.freq <- total.QTL + freq.neg                  
+        freq.for.orig.trait <- c(freq.for.orig.trait, record.freq)
+       } #end j loop
+   
+   #generate matrix for negative correlations    
+   sig.neg.freq.matrix <- rbind(sig.neg.freq.matrix, freq.for.orig.trait) 
+    } #end i loop
+   colnames(sig.neg.freq.matrix) <- traits
+   rownames(sig.neg.freq.matrix) <- traits
+####################################################################
+
+
+ #Translation to input for Pat code
+ shared_inflo1 <- sig.pos.freq.matrix
+ shared_inflo2 <- sig.neg.freq.matrix 
+
+
+###if fewer than 1% of comparisons show pleiotropy at p<.01, change to 0
+###scale by % pleiotropic QTL
+###add up sig_pos and sig_neg in both directions
+###these 3 matrices are now symmetrical
+sig_pos=matrix(NA,length(traits),length(traits))    #matrix of NA, row and column length sized to the total number of traits
+sig_neg=matrix(NA,length(traits),length(traits))    #matrix of NA, row and column length sized to the total number of traits
+pleiotropy_matrix=matrix(NA,length(traits),length(traits))            
+cutoff <- 0.1                                      #IMPORTANT!! Input required here
+for (i in 1:length(traits)){
+  for (j in 1:length(traits)){
+    pos=(shared_inflo1[i,j]+shared_inflo1[j,i])/(shared_inflo1[i,i]+shared_inflo1[j,j])           #shared_inflo1 file contains actual number of sig pos corr - name of pos corr matrix
+    neg=(shared_inflo2[i,j]+shared_inflo2[j,i])/(shared_inflo1[i,i]+shared_inflo1[j,j])           #shared_inflo2 file contains actual number of sig neg corr - name of neg corr matrix
+    sig_pos[i,j]=ifelse((pos+neg)>cutoff,pos,0)     #if sum of pos and neg ratios > cutoff (presumably 0.1), then keep pos corr value, otherwise store 0
+    sig_neg[i,j]=ifelse((pos+neg)>cutoff,neg,0)     #if sum of pos and neg ratios > cutoff (presumably 0.1), then keep neg corr value, otherwise store 0
+    pleiotropy_matrix[i,j]=sig_pos[i,j]+sig_neg[i,j]   #in pleio matrix cell, store addition of positive and negative ratios
+  }}
+
+
+################################## NOTE: new color matrix generated for each positive, negative and combined network graph   ##########################
+###color matrix: col=2 if only positive pleiotropy; col=3 if only negative pleiotropy;
+###col=0 if no pleiotropy; col=5 if both positive and negative
+#positive network only
+col_matrix.pos=matrix(NA,length(traits),length(traits))
+for (i in 1:length(traits)){
+  for (j in 1:length(traits)){		
+    #col_matrix[i,j]=ifelse(sig_pos[i,j]>0&sig_neg[i,j]==0,3,ifelse(sig_pos[i,j]==0&sig_neg[i,j]>0,2,ifelse(sig_pos[i,j]==0&sig_neg[i,j]==0,0,6)))
+    col_matrix.pos[i,j]=ifelse(sig_pos[i,j]>0,3,0)
+  }}
+
+#negative network only
+col_matrix.neg=matrix(NA,length(traits),length(traits))
+for (i in 1:length(traits)){
+  for (j in 1:length(traits)){		
+    #col_matrix[i,j]=ifelse(sig_pos[i,j]>0&sig_neg[i,j]==0,3,ifelse(sig_pos[i,j]==0&sig_neg[i,j]>0,2,ifelse(sig_pos[i,j]==0&sig_neg[i,j]==0,0,6)))
+    col_matrix.neg[i,j]=ifelse(sig_neg[i,j]>0,2,0)
+  }}
+  
+#combined network - 3, pos, green; 2, neg, red; 6, combined, magenta; 0, non-sig, white
+col_matrix.all=matrix(NA,length(traits),length(traits))
+for (i in 1:length(traits)){
+  for (j in 1:length(traits)){		
+    col_matrix.all[i,j]=ifelse(sig_pos[i,j]>0&sig_neg[i,j]==0,3,ifelse(sig_pos[i,j]==0&sig_neg[i,j]>0,2,ifelse(sig_pos[i,j]==0&sig_neg[i,j]==0,0,6)))
+  }}
+
+  ###################################### NOTE: network graph using line widths based on sig_pos, sig_neg or pleiotropy_matrix matrices are individually generated   #####################
+###lty matrix: give dotted line to weaker pleiotropy
+#lty_matrix=apply(pleiotropy_matrix,c(1,2),function(x){ifelse(x>0.25,"solid",ifelse(x<0.1&x>0,"dotted",ifelse(x==0,"blank","dashed")))})
+library(network)
+inflo_network=as.network.matrix(pleiotropy_matrix)
+png(paste(home.dir, "\\Pleiotropy Summaries\\Carot.network.pleio.graphs\\carot.genomewide.POS.pleio.cutoff_",cutoff*100,"pct.png",sep=""),height=8,width=8,units="in",res=200)
+par(mar=c(0,0,0,0),oma=c(0,0,0,0))
+#plot.network(inflo_network,label=traits,mode="circle",edge.lwd=pleiotropy_matrix*15,usearrows=F,label.cex=1.7,boxed.labels=F,edge.col=col_matrix,vertex.col=colors,vertex.cex=1.7,vertex.sides=30)
+plot.network(inflo_network,label=traits,mode="circle",edge.lwd=sig_pos*25,usearrows=F,label.cex=1.7,boxed.labels=F,edge.col=col_matrix.pos,vertex.cex=1.7,vertex.sides=30)
+
+dev.off()
+
+###lty matrix: give dotted line to weaker pleiotropy
+#lty_matrix=apply(pleiotropy_matrix,c(1,2),function(x){ifelse(x>0.25,"solid",ifelse(x<0.1&x>0,"dotted",ifelse(x==0,"blank","dashed")))})
+library(network)
+inflo_network=as.network.matrix(pleiotropy_matrix)
+png(paste(home.dir, "\\Pleiotropy Summaries\\Carot.network.pleio.graphs\\carot.genomewide.NEG.pleio.cutoff_",cutoff*100,"pct.png",sep=""),height=8,width=8,units="in",res=200)
+par(mar=c(0,0,0,0),oma=c(0,0,0,0))
+#plot.network(inflo_network,label=traits,mode="circle",edge.lwd=pleiotropy_matrix*15,usearrows=F,label.cex=1.7,boxed.labels=F,edge.col=col_matrix,vertex.col=colors,vertex.cex=1.7,vertex.sides=30)
+plot.network(inflo_network,label=traits,mode="circle",edge.lwd=sig_neg*25,usearrows=F,label.cex=1.7,boxed.labels=F,edge.col=col_matrix.neg,vertex.cex=1.7,vertex.sides=30)
+
+dev.off()
+
+###lty matrix: give dotted line to weaker pleiotropy
+#lty_matrix=apply(pleiotropy_matrix,c(1,2),function(x){ifelse(x>0.25,"solid",ifelse(x<0.1&x>0,"dotted",ifelse(x==0,"blank","dashed")))})
+library(network)
+inflo_network=as.network.matrix(pleiotropy_matrix)
+png(paste(home.dir, "\\Pleiotropy Summaries\\Carot.network.pleio.graphs\\carot.genomewide.ALL.pleio.cutoff_",cutoff*100,"pct.png",sep=""),height=8,width=8,units="in",res=200)
+par(mar=c(0,0,0,0),oma=c(0,0,0,0))
+#plot.network(inflo_network,label=traits,mode="circle",edge.lwd=pleiotropy_matrix*15,usearrows=F,label.cex=1.7,boxed.labels=F,edge.col=col_matrix,vertex.col=colors,vertex.cex=1.7,vertex.sides=30)
+plot.network(inflo_network,label=traits,mode="circle",edge.lwd=pleiotropy_matrix*25,usearrows=F,label.cex=1.7,boxed.labels=F,edge.col=col_matrix.all,vertex.cex=1.7,vertex.sides=30)
+
+dev.off()

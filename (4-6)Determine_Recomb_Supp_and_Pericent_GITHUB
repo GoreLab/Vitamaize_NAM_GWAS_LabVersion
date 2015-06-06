@@ -1,13 +1,12 @@
 rm(list = ls())
 
 ###Required files:
-### (1) Modified version of JL results in tabular summary (.txt) containing only these columns: Trait, Peak_Marker_Name, Chr, Peak_Pos,	Left_SI_Bound,	Right_SI_Bound
+### (1) Tabular summary file for JL - containing JL/ GWAS/ common SI info from scripts 4-1, 4-2, 4-3 but most important criteria - CHR is [,2], QTL_PEAK_POS is [,3], and input file is DEVOID OF SPACES
 ### (2) Recombination_Suppression_1106_Markers_AGPv2.txt file, containing genetic distance per megabase for region marker by 1106 original SNP markers
-### (3) Centromere_Positions_20140702_Reformatted_for_R.txt, containing centromere positions in AGPv1
+### (3) Centromere_Positions_20140702_Reformatted_for_R_AGPv2.txt, containing centromere positions in AGPv2 (conversion made 6/3/2015)
 
 ######Output:
 ### (1) File will append matrix of recombination suppression percentiles and pericentromere region descriptors to above JL results
-### NOTE: will need to append this to the tabular summary version with GWAS SNP and LOD info
 
 ###################Function that will find the cM/Mb estimate of the nearest marker in the 1,106 marker set
 get.me.my.recomb.info <- function(){
@@ -64,25 +63,25 @@ in.pericentromeric.region.or.not <- function(){
 #############################################################################################
 #############################################################################################
 
-#Set the working directory
-setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(24) Additional analyses for manuscript tables\\Rec Suppression Code from AEL\\")
+#Set working directory
+setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(31) Tabular Summary Info for 2015 analysis\\Recombination Suppressed Regions\\")
 
 #Read in the JL QTL information, which is an abbreviated version of Supplemental Table 2
-the.JL.results <- read.table("Carot_Supp_Tab_2_as_txt.txt",head = TRUE)
+the.JL.results <- read.table("Tab_Sum_Carot_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_no_spaces.txt",head = TRUE)
 
 #Read in information about recombination suppression
 the.recomb.supp.info <- read.table("Recombination_Suppression_1106_Markers_AGPv2.txt",head = TRUE)
 
 #Read in the AGPv1 pericentromeric regions
-AGPv1.pericentromeric.regions <- read.table("Centromere_Positions_20140702_Reformatted_for_R.txt",head = TRUE)
+AGPv1.pericentromeric.regions <- read.table("Centromere_Positions_20140702_Reformatted_for_R_AGPv2.txt",head = TRUE)
 
 #For loop through each QTL
 cMMb <- NULL
 percentile <- NULL
 in.recomb.supp <- NULL
 for(i in 1:nrow(the.JL.results)){
-  chr <- the.JL.results[i,3]
-  QTL.peak.pos <- the.JL.results[i,4]
+  chr <- the.JL.results[i,2]
+  QTL.peak.pos <- the.JL.results[i,3]
   
   #Obtain the cM/Mb estimate of the nearest marker in the 1,106 marker set
   recomb.info <- get.me.my.recomb.info()
@@ -108,6 +107,20 @@ for(i in 1:nrow(the.JL.results)){
 #cbind both vectors to the original file read in
 the.JL.results <- cbind(the.JL.results, cMMb, percentile, in.recomb.supp)
 
-#Ouput the appended Supplemental Table 2 file.
-write.table(the.JL.results, "Carot_Supp_Table_2_with_Recomb_Supp_and_Pericent_Info.txt", sep = "\t", 
+#Output the appended Supplemental Table 2 file.
+write.table(the.JL.results, "Tab_Sum_Carot_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_recsuppregions.txt", sep = "\t", 
             row.names = FALSE,col.names = TRUE,quote = FALSE)
+
+
+
+#using input JL file with common support intervals and GWAS information
+
+
+
+
+
+
+
+
+
+

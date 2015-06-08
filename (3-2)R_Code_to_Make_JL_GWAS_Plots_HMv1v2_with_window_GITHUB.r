@@ -10,9 +10,17 @@ rm(list=ls())
 #Read in the gneotypic data
 #setwd("F:\\Permutations\\GBS_SNPs\\imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt")
 #genotypes <- read.table("imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt", head = TRUE)
+setwd("C:/Users/chd45/Documents/Projects/NAM_GP/Inputs/JL/")                                #CHD added 5-14
+home.dir <- getwd()
+trait.set <- "tocos" #Options are "carots" or "tocos"
+geno.path = paste(home.dir, "/validate_CBK.AEL/",sep='')
+JL.path <- paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/R.JL.no.MultiColl/Toco_FinalModels_postMCCorrPostRescan-whenApplicable/",sep='')
+raw.GWAS.results.path = paste(home.dir, "/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/GWAS_Analysis/GWAS_25fam_HMPonly_TASSEL3_alpha01_2015_corr/",sep='')
+plotSummary.path = paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/Graphical_Summaries/",sep='')
+max.log.pval <- 40 #Maximum -log10(P-value) to include on the graphs.
+jitter.JL <- 100000000
 
-genotypes <- read.table("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(9)JL Analysis\\Permutations\\GBS_SNPs\\imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt", head = TRUE)
-JL.path <- "C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(9)JL Analysis\\Permutations\\Data_for_1pct_Support_Intervals\\JL_output\\JL_model_modified_SI01\\"
+genotypes <- read.table(paste(geno.path,"imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt",sep=''), head = TRUE)
 
 #Step 0: Set directory to load GAPIT source files (this step is omited for using package)
 #######################################################################################
@@ -27,20 +35,28 @@ library("compiler")
 #setwd("F:\\NAM_Carot_GWAS_v1v2")
 
 #working.directory <- "F:\\NAM_Carot_GWAS_v1v2\\"
-source("http://www.maizegenetics.net/images/stories/bioinformatics/GAPIT/emma.txt")
-
-source("http://www.maizegenetics.net/images/stories/bioinformatics/GAPIT/gapit_functions.txt")
+source("http://zzlab.net/GAPIT/emma.txt")
+source("http://zzlab.net/GAPIT/gapit_functions.txt")
 #source("test.r")
 #load("GAPIT.EMMA.Workspace20120120_FOR_EMMAX_P3D.Rdata")
 #source("C:\\Users\\ael54\\Desktop\\August_2010_data\\GAPIT\\Add_R_square_and_BIC\\Modified_Code_from_the_Internet.r")
 
 #source("EMMAxP3D_20111101 - Copy.r")
 
+
 ##############Note: Adapt this loop so that mutliple traits can be run to make these kind of plots:
 
 #Input a list of paths, and use the "List" function to combine them into one object
+#Loop around the traits.                                #CHD 5-14 loop made so that carots or tocos can be run automatically from top of script.
+if (trait.set == "carots"){
+  trait <- c("LUT_RUV", "ZEA_RUV","ZEI_RUV","BCRY_RUV","ACAR_RUV","PHYF_RUV","THLYC_RUV")    
+  trait.collinear <- c("BCAR_RUV", "TOTCAR_RUV") 
+} else if (trait.set == "tocos"){
+  trait <- c("aT","aT3","dT","dT3","gT","gT3","PC8","totalT","totalT3","totalTocochrs")       #CHD added 5-11
+  trait.collinear <- c("aT3","dT3","gT3","totalT3","totalTocochrs")   
+}else{print("Error: no trait set selected. Please specify carots or tocos.")}
 
-trait<- "BCAR_RUV" 
+#trait<- "BCAR_RUV" 
 
 #trait<- c("LUT_RUV","ZEA_RUV","ZEI_RUV","BCRY_RUV",
 #"ACAR_RUV","BCAR_RUV","PHYF_RUV","THLYC_RUV",
@@ -55,7 +71,7 @@ trait<- "BCAR_RUV"
 #not produce plots
 ########################
           
-trait.multicollinearity <- c("BCAR_RUV")
+#trait.multicollinearity <- c("BCAR_RUV")
 
 
 # c("LUT_RUV","ZEA_RUV","ZEI_RUV","BCRY_RUV",
@@ -64,9 +80,6 @@ trait.multicollinearity <- c("BCAR_RUV")
 #"ACAR_MSS","BCAR_MSS","PHYF_MSS","THLYC_MSS",
 #"TOTCAR_RUV","TOTCAR_MSS")
 #
-
-
-max.log.pval <- 40 #Maximum -log10(P-value) to include on the graphs.
 
  #Create Marker cateogries. I will comment these out for now, but we may want to put this back in later.
 #hm2.missing <- c("A/C_as_missing", "A/T_as_missing", "A/G_as_missing", 
@@ -80,8 +93,6 @@ max.log.pval <- 40 #Maximum -log10(P-value) to include on the graphs.
 #hm1 <- c("A/C_hm1", "A/T_hm1", "A/G_hm1", "C/A_hm1", "C/T_hm1", "C/G_hm1", "T/A_hm1", "T/C_hm1", "T/G_hm1", "G/A_hm1", "G/C_hm1", "G/T_hm1")
 #
 #cnv <- "cnv-" 
-
-jitter.JL <- 100000000
 
 
 #######################################
@@ -106,7 +117,7 @@ for(i in trait){
 #Phenotypic Data
 #data  <- read.table(paste(working.directory,i,"\\Complete_Results_",i,".txt", sep = ""), head = TRUE)
 ### NOTE that code below has been changed to be specific to BCAR alone and will need to be modified for entire loop of traits
-data  <- read.table(paste("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(10)GWAS Analysis\\RUV GWAS 25fam_HMPonly - rerun\\BCAR_RUV_no_collin_25fam_HMPonly\\Complete_Results_BCAR_RUV_no_collin_25fam_HMPonly.txt", sep = ""), head = TRUE)
+data  <- read.table(paste(raw.GWAS.results.path,i,"_iterations/Complete_Results_",i,".txt", sep = ""), head = TRUE)
 
 NA.Fval <- rep(NA, nrow(data))
 
@@ -145,11 +156,20 @@ colnames(data)[5] <- "Fval"
 
 ##################
 
+#Read in the results from JL analysis
+if (trait.set == "carots"){
+  #setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\JL_output\\JL_model_modified_SI01\\",  sep = ""))
+  JL.results <- read.table(paste(JL.path,i, "_JL_model_modified_SI01_2015.txt"   , sep = "") , head = TRUE)
+}
 
-  #Read in JL Results
-  JL.results <- read.table(paste(JL.path,i,"_JL_model_modified_no_multicollinearity_SI01.txt", 
-                                 sep = ""), head = TRUE)
-                                    
+if (trait.set == "tocos"){
+  if (i %in% trait.collinear){   
+    JL.results <- read.table(paste(JL.path,"MC_corrected_",i,"_postRescan_R.formatted.txt", sep = "") , head = TRUE)        #CHD added loop 5-14 to handle both MC and non-MC traits
+  } else {
+    JL.results <- read.table(paste(JL.path,i,"_model_3fromSF_0.01_Final_R.formatted.txt", sep = "") , head = TRUE)
+  }
+}
+                           
   #Truncate the JL results so that you have only what you need
   JL.results.truncated <- JL.results[-1,c(2,4,9)]
 
@@ -235,7 +255,7 @@ for(j in chm.to.analyze[-length(chm.to.analyze)]){
 #print("Manhattan XY created")
 
   #pdf(paste(working.directory,i,"\\JL_GWAS_Summary_Plot_",i,".pdf", sep = ""), width = 10)
-  pdf(paste("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(10)GWAS Analysis\\RUV GWAS 25fam_HMPonly - rerun\\BCAR_RUV_no_collin_25fam_HMPonly\\JL_GWAS_Summary_Plot_",i,".pdf", sep = ""), width = 10)
+  pdf(paste(plotSummary.path,"JL_GWAS_Summary_Plot_",i,".pdf", sep = ""), width = 10)
   #pdf(paste("Desktop\\JL_GWAS_Summary_Plot_",i,".pdf", sep = ""), width = 10)
   par(mar = c(5,5,5,5))
 
@@ -263,7 +283,7 @@ rm(data)
 #############################Now, make a graph for the sum(RMIP) results within each window
 
 #Phenotypic Data
-data  <- read.table(paste(working.directory,i,"\\Complete_Results_within_ME_Windows_",i,".txt", sep = ""), head = TRUE)
+data  <- read.table(paste(raw.GWAS.results.path,i,"_iterations/Complete_Results_within_ME_Windows_",i,".txt", sep = ""), head = TRUE)
 
 NA.Fval <- rep(NA, nrow(data))
 
@@ -343,8 +363,7 @@ for(j in chm.to.analyze[-length(chm.to.analyze)]){
    
     
 #print("Manhattan XY created")
-
-  pdf(paste(working.directory,i,"\\JL_GWAS_Summary_Plot_within_",window.size.genetic,"Windows",i,".pdf", sep = ""), width = 10)
+  pdf(paste(plotSummary.path,"JL_GWAS_Summary_Plot_within_",window.size.genetic,"Windows",i,".pdf", sep = ""), width = 10)
   par(mar = c(5,5,5,5))
 
    plot(x,y, pch = 19, col = "darkgreen", axes = FALSE, xlab = "", ylab = "", main = paste("For GWAS: Genome Subdivided into ",window.size.genetic, " Bins" , sep = ""), cex.main = 1.5)

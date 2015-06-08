@@ -4,11 +4,15 @@ rm(list=ls())
 ###Required files:
 ### (1) imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt (GBS SNPs)
 ### (2) GWAS model files for each chromosome and bootstrap sample
+trait.set = "tocos" #options: "carots" or "tocos"
 
-
+setwd("C:/Users/chd45/Documents/Projects/NAM_GP/Inputs/JL/")                                #CHD added 5-27
+home.dir <- getwd()
+geno.path = paste(home.dir, "/validate_CBK.AEL/",sep='')
+raw.GWAS.results.path = paste(home.dir, "/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/GWAS_Analysis/GWAS_25fam_HMPonly_TASSEL3_alpha01_2015_corr/",sep='')
 
 #For creating windows based on genetics map: Read in the SNP Name (containing physical cooordinates in its name), Genetic postion (cM), and Chromosome
-genotypes <- read.table("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(9)JL Analysis\\Permutations\\GBS_SNPs\\imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt", head = TRUE)
+genotypes <- read.table(paste(geno.path,"/imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt",sep=''), head = TRUE)
 #Extract only the first five columns of genotypes for creating windows
 window.data <- genotypes[,1:5]
 
@@ -16,9 +20,8 @@ window.data <- genotypes[,1:5]
 #Set our working directory
 
 
-setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(10)GWAS Analysis\\RUV GWAS 25fam_HMPonly_TASSEL3_alpha01_2015 corr\\")
-
-working.directory <- "C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(10)GWAS Analysis\\RUV GWAS 25fam_HMPonly_TASSEL3_alpha01_2015 corr\\"
+setwd(raw.GWAS.results.path)
+working.directory <- getwd()
 
 
 #Input a list of paths, and use the "List" function to combine them into one object
@@ -30,7 +33,13 @@ working.directory <- "C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merg
 #"TOTCAR_RUV","TOTCAR_MSS") 
           window.size.genetic <- 1 #Give the Window size in cM
 num.chr <- 10
-trait <- c("ACAR_RUV", "BCRY_RUV", "PHYF_RUV", "THLYC_RUV", "ZEI_RUV")
+
+if(trait.set == "carots"){
+  trait <- c("ACAR_RUV", "BCRY_RUV", "PHYF_RUV", "THLYC_RUV", "ZEI_RUV")
+}
+if(trait.set == "tocos"){
+  trait = c("aT","aT3","dT","dT3","gT","gT3","PC8","totalT","totalT3","totalTocochrs")
+}
 #i <- trait
 
 #For each path (i.e., for each trait)
@@ -38,7 +47,7 @@ trait <- c("ACAR_RUV", "BCRY_RUV", "PHYF_RUV", "THLYC_RUV", "ZEI_RUV")
 for(i in trait){
 condensed.data <-NULL
 
-  path <- working.directory
+  #path <- working.directory
   
   #setwd(paste(working.directory, subdirectory.vector[[i]], sep = ""))
 
@@ -47,12 +56,13 @@ condensed.data <-NULL
      for(j in 1:10){
    #for(j in 1:num.chr){
       #Read in the data
-      iter.seq <- c(0,10,20,30,40,50,60,70,80,90)
+      #iter.seq <- c(0,10,20,30,40,50,60,70,80,90) #CHD commented out 5/27; iterations now being concatenated in 3 files/chr
+      iter.seq <- c("0-34","35-69","70-100")
       data.chr <- NULL
       for(k in iter.seq){
         #data.path <- paste(path,i,"\\",i,"_model_chr",j,"_iter",k,".txt", sep = "")
         #data.temp <- try(read.table(data.path, head=FALSE, sep = ""))
-        data.temp <- try(read.table(paste(path,i,"\\",i,"_model_chr",j,"_iter",k,".txt", sep = ""), head = FALSE))
+        data.temp <- try(read.table(paste(working.directory,"/",i,"_iterations/",i,"_model_chr",j,"_iter",k,".txt", sep = ""), head = FALSE))
         if(!inherits(data.temp, "try-error")) data.chr <- rbind(data.chr, data.temp)
       } #end  for(k in iter.seq)
       #Keep the chromosome and bp position
@@ -98,7 +108,7 @@ condensed.data <-NULL
 
 #Output them into a single file                                     
 
-   write.table(condensed.data, paste(path,i, "\\Complete_Results_", i,".txt", sep = "" ), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+   write.table(condensed.data, paste(working.directory,"/",i,"_iterations/Complete_Results_", i,".txt", sep = "" ), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 
 
 
@@ -157,7 +167,7 @@ for(j in 1:num.chr){
 
 #Output them into a single file                                     
 
-   write.table(results.within.windows, paste(path,i, "\\Complete_Results_within_ME_Windows_", i,".txt", sep = "" ), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+   write.table(results.within.windows, paste(working.directory,"/",i,"_iterations/Complete_Results_within_ME_Windows_", i,".txt", sep = "" ), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 
  rm(results.within.windows)
  rm(condensed.data)

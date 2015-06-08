@@ -1,11 +1,11 @@
 #Set the working directory
-setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(16)Generating Robust Files for Group Review\\Generating overlapping support intervals")
+setwd("C:/Users/chd45/Documents/Projects/NAM_GP/Inputs/JL/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/Tabular_Summaries/")
 home.dir <- getwd()
 
 ###Required files:
 ### (1) Tabular summary file generated in script (4-1); IMPORTANT - must be sorted by chromosome and left bound of support interval
 
-the.data <- read.table("Tab_Sum_Carot_alpha_0.01_20140603_sorted_by_left_bound.txt",head = TRUE)
+the.data <- read.table("Tabular_Summary_of_JL_tocos_Results_for_all_traits_SI01_sorted_by_Chr_LeftBound.txt",head = TRUE)
 
 Common.SI.tracker <- NULL
 counter <- 0
@@ -68,8 +68,10 @@ for(i in unique(the.data[,2])){
 the.data.final <- cbind(the.data, Common.SI.tracker, Common.bp.left.vector, Common.bp.right.vector)
 
 #Write this information out into a table.
-write.table(the.data.final, "Tab_Sum_Carot_with_Common_SI_Info_updated_20140617_left_bound.txt", 
-                          sep = "\t", row.names = TRUE,col.names = TRUE,quote = FALSE)
+#write.table(the.data.final, "Tab_Sum_Carot_with_Common_SI_Info_updated_20140617_left_bound.txt", 
+                          #sep = "\t", row.names = TRUE,col.names = TRUE,quote = FALSE)   #CHD commented out 5/27/15 to make name more generic
+write.table(the.data.final, "Tab_Sum_with_Common_SI_Info_left_bound.txt", 
+            sep = "\t", row.names = TRUE,col.names = TRUE,quote = FALSE)
 
 
 

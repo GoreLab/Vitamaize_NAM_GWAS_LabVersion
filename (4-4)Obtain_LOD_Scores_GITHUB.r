@@ -11,15 +11,24 @@ rm(list = ls())
 ######################################################################################################################################
 ######################################################################################################################################
 get.geno.pheno.chr.and.cM <- function(){
-  setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\Phenotypes_no_trait_number\\",  sep = ""))
-  
-  pheno.data <- read.table(paste(i,"_BLUE_outtrans.txt", sep = ""), head = TRUE)
-  
+  pheno.data <- read.table(paste(pheno.path,"BLUEs_No_Outliers_Transformed_all_for_TASSEL_",i,".txt", sep = ""), head = TRUE)
   
   #Read in the results from JL analysis
-  setwd(paste(home.dir, JL.results.dir, sep = ""))
   #TASSEL.model.results <- read.table(paste(i, "_JL_model_SI01.txt", sep = "") , head = TRUE)
-  TASSEL.model.results <- read.table(paste(i, "_JL_model_SI01_no_collin.txt", sep = "") , head = TRUE)
+  
+  #Read in the results from JL analysis
+  if (trait.set == "carots"){
+    #setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\JL_output\\JL_model_modified_SI01\\",  sep = ""))
+    TASSEL.model.results <- read.table(paste(JL.path,i, "_JL_model_modified_SI01_2015.txt"   , sep = "") , head = TRUE)
+  }
+  
+  if (trait.set == "tocos"){
+    if (i %in% trait.collinear){   
+      TASSEL.model.results <- read.table(paste(JL.path,"MC_corrected_",i,"_postRescan_R.formatted.txt", sep = "") , head = TRUE)        #CHD added loop 5-14 to handle both MC and non-MC traits
+    } else {
+      TASSEL.model.results <- read.table(paste(JL.path,i,"_model_3fromSF_0.01_Final_R.formatted.txt", sep = "") , head = TRUE)
+    }
+  }
   
   if(is.numeric(TASSEL.model.results[,2]) == FALSE){
    print(paste("The chromosome column in ", i," model results needs to be numeric. Please change this before proceeding.", sep = ""))
@@ -148,20 +157,32 @@ fit.reduced.model.obtain.log.L <- function(){
 
 
 #Set the home directory, output directory, and results where the TASSEL alpha = 0.01 JL analysis results are stored
-setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
+setwd("C:/Users/chd45/Documents/Projects/NAM_GP/Inputs/JL/")                                #CHD added 5-14
 home.dir <- getwd()
-JL.results.dir <- "\\(9)JL Analysis\\Permutations\\Data_for_1pct_Support_Intervals\\Reformatted_JL_Output\\"
-output.dir <- "\\(16)Generating Robust Files for Group Review\\LOD scores\\LOD_results\\"
+trait.set <- "tocos" #Options are "carots" or "tocos"
+geno.path = paste(home.dir, "/validate_CBK.AEL/",sep='')
+pheno.path = paste(home.dir, "/Phenotypes/",sep ='')
+JL.path = paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/R.JL.no.MultiColl/Toco_FinalModels_postMCCorrPostRescan-whenApplicable/",sep='')
+tabSummary.path = paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/Tabular_Summaries/",sep='')
 
 #Read in the markers for JL analysis
-setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\GBS_SNPs\\", sep = ""))
-genotypes <- read.table("imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt", head = TRUE)
+genotypes <- read.table(paste(geno.path,"imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt",sep=''), head = TRUE)
 
 #Set up a vector of traits
 #trait <- c("LUT_RUV", "ZEI_RUV", "BCRY_RUV", "PHYF_RUV", "THLYC_RUV") 
-trait.multicollinearity <- c("BCAR_RUV", "TOTCAR_RUV", "ZEA_RUV")
+#trait.multicollinearity <- c("BCAR_RUV", "TOTCAR_RUV", "ZEA_RUV")
   #to change if multicollinear trait is being used
-  trait <- trait.multicollinearity
+#trait <- trait.multicollinearity
+
+#Loop around the traits.                                #CHD 5-14 loop made so that carots or tocos can be run automatically from top of script.
+if (trait.set == "carots"){
+  trait <- c("LUT_RUV", "ZEA_RUV","ZEI_RUV","BCRY_RUV","ACAR_RUV","PHYF_RUV","THLYC_RUV")    
+  trait.collinear <- c("BCAR_RUV", "TOTCAR_RUV") 
+} else if (trait.set == "tocos"){
+  trait <- c("aT","aT3","dT","dT3","gT","gT3","PC8","totalT","totalT3","totalTocochrs")       #CHD added 5-11
+  trait.collinear <- c("aT3","dT3","gT3","totalT3","totalTocochrs")   
+}else{print("Error: no trait set selected. Please specify carots or tocos.")}
+
 BLUE.or.BLUP <- "BLUE"  #Options are "BLUE" and "BLUP"
 window.size.cM.on.either.side <- 3
 
@@ -212,7 +233,6 @@ for(i in trait){#For loop through the traits
   
   
   colnames(results) <- c("SNP_ID", "Chr", "cM", "logL_Full", "logL_Reduced", "Likelihood_Ratio_Test_Statistic", "LOD_Score")
-  setwd(paste(home.dir, output.dir, sep = ""))
-  write.table(results, paste("LOD_Score_Scan_",i,".txt", sep = ""),sep = "\t", row.names = FALSE, quote = FALSE)
+  write.table(results, paste(tabSummary.path,"LOD_Score_Scan_",i,".txt", sep = ""),sep = "\t", row.names = FALSE, quote = FALSE)
   print(paste("------------------Finished ", i,"-------------------------------------------",sep = ""))
 }#End for(i in trait)

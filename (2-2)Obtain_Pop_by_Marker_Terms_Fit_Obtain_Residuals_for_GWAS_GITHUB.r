@@ -3,42 +3,67 @@ rm(list = ls())
 ###Required files:
 ### (1) imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt (GBS SNPs)
 ### (2) transformed BLUEs
-### (3) JL model output, with NA in pop term row (modified version)
+### (3) JL model output, with NA in pop term row (modified version) and residual row removed from file
 
 
 
 #Use the multtest library to obtain FDR-adjusted P-values
 
 
-setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(9)JL Analysis\\Permutations")
+setwd("C:/Users/chd45/Documents/Projects/NAM_GP/Inputs/JL/")                                #changed CHD 5-11
 home.dir <- getwd()
-
-
+geno.path = paste(home.dir, "/validate_CBK.AEL/",sep='')
+pheno.path = paste(home.dir, "/Phenotypes/",sep ='')
+JL.path = paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/R.JL.no.MultiColl/Toco_FinalModels_postMCCorrPostRescan-whenApplicable/",sep='')
+popByMarker.path = paste(home.dir, "/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/Allelic_Effect_Estimates.no.MultiColl/", sep = "")
+residuals.path = paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/Resid.no.MultiColl/",sep='')
+trait.set = "tocos" #options: "carots" or "tocos"
 library(multtest)
 
 #Read in the genotypic data
-setwd(paste(home.dir, "\\GBS_SNPs", sep = ""))
-genotypes <- read.table("imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt", head = TRUE)
+#setwd(paste(home.dir, "\\validate_CBK.AEL", sep = ""))                                       #CHD commented out 5-14
+genotypes <- read.table(paste(geno.path,"imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt",sep=''), head = TRUE)
 
-#Eventually, loop around the traits. This loop will begin here
-
-trait <- c("LUT_RUV", "ZEA_RUV","ZEI_RUV","BCRY_RUV","ACAR_RUV","PHYF_RUV","THLYC_RUV")    
-trait.collinear <- c("BCAR_RUV", "TOTCAR_RUV")    
-
+#Eventually, loop around the traits. This loop will begin here                                #CHD 5-14 loop made so that carots or tocos can be run automatically from top of script.
+if (trait.set == "carots"){
+  trait <- c("LUT_RUV", "ZEA_RUV","ZEI_RUV","BCRY_RUV","ACAR_RUV","PHYF_RUV","THLYC_RUV")    
+  trait.collinear <- c("BCAR_RUV", "TOTCAR_RUV") 
+} else if (trait.set == "tocos"){
+  trait <- c("aT","aT3","dT","dT3","gT","gT3","PC8","totalT","totalT3","totalTocochrs")       #CHD added 5-11
+  trait.collinear <- c("aT3","dT3","gT3","totalT3","totalTocochrs")   
+}else{print("Error: no trait set selected. Please specify carots or tocos.")}
+  
 #BLUE.or.BLUP <- "BLUE"  #Options are "BLUE" and "BLUP"
 
 for(i in trait){
 #Read in the trait under study
-setwd(paste(home.dir, "\\Phenotypes\\Phen_files_no_trait_prefix\\",sep = ""))
-pheno.data <- read.table(paste(trait,"_BLUE_outtrans.txt", sep = ""), head = TRUE)
+#setwd(paste(home.dir, "\\Phenotypes\\",sep = ""))
+  if (trait.set == "carots"){
+      pheno.data <- read.table(paste(pheno.path,i,"_BLUE_outtrans.txt", sep = ""), head = TRUE)
+  } else if (trait.set == "tocos"){
+      pheno.data <- read.table(paste(pheno.path,"BLUEs_No_Outliers_Transformed_all_for_TASSEL_",i,".txt", sep = ""), head = TRUE)
+  }
+
 head(pheno.data)
 
 #Read in the results from JL analysis
-setwd(paste(home.dir, "\\Data_for_1pct_Support_Intervals\\JL_output\\JL_model_modified_SI01\\", sep = ""))
-TASSEL.model.results <- read.table(paste(trait, "_JL_model_modified_SI01.txt"   , sep = "") , head = TRUE)
-
-### if trait.collinear
-#TASSEL.model.results <- read.table(paste(trait, "_JL_model_modified_no_multicollinearity_SI01.txt"   , sep = "") , head = TRUE)
+#setwd(paste(home.dir, "\\Data_for_1pct_Support_Intervals\\JL_output\\JL_model_modified_SI01\\", sep = ""))
+#new path for SI01 required here (CBK note)
+if (trait.set == "carots"){
+  if (i %in% trait.collinear){
+    TASSEL.model.results <- read.table(paste(JL.path,i, "_JL_model_modified_no_multicollinearity_SI01.txt", sep = "") , head = TRUE)
+  } else {
+    TASSEL.model.results <- read.table(paste(JL.path,i, "_JL_model_modified_SI01.txt", sep = "") , head = TRUE)
+  }
+}
+  
+if (trait.set == "tocos"){
+  if (i %in% trait.collinear){   
+    TASSEL.model.results <- read.table(paste(JL.path,"MC_corrected_",i,"_postRescan_R.formatted.txt", sep = "") , head = TRUE)        #CHD added loop to handle both MC and non-MC traits
+  } else {
+    TASSEL.model.results <- read.table(paste(JL.path,i,"_model_3fromSF_0.01_Final_R.formatted.txt", sep = "") , head = TRUE)
+  }
+}
 
 #### #########################################################################################################################################
 #Get the appropriate SNPs and merge the phenotypic and genotypic data together.
@@ -51,7 +76,7 @@ colnames(geno.reduced.formatted) <- as.character(t(geno.reduced[,1]))
 
 
 #pheno.data will always have more data becuase IBM is included in the phenotypic data.
-
+colnames(pheno.data)[1] = "Geno_Code" #line added by CHD 5-14; toco pheno files are formatted for TASSEL so use <trait> header format; this line will unify with carot format for the column needed for merge.
 geno.and.pheno <- merge(pheno.data, geno.reduced.formatted, by.x = "Geno_Code", by.y = "row.names")
 
 #Add a population column
@@ -61,7 +86,7 @@ colnames(geno.and.pheno)[2] <- "pop"
 
 ##############################################################################################################################################
 #Fit the JL model and obtain pop*marker terms
-attach(geno.and.pheno)
+#attach(geno.and.pheno)   #cHD commented out 5/14; attaching causes masking and other problems, avoiding. geno.and.pheno was already specified below where needed.
 
 
 #Get the model order of the model in R to be the same as that in TASSEL.
@@ -75,7 +100,7 @@ model.order <- cbind(model.order, seq(1:nrow(model.order)))      #BY CBK: add ne
 model.order <- model.order[order(model.order[,1]),]              #BY CBK: obtain original numbering
 index <- model.order[,5]+3 #3 is added so because the first SNP is on the fourth column             #by CBK: just the model order by chr and position
 
-base.model <- paste(trait, " ~ pop+",sep = "")                    #By CBK: paste trait and pop+   - note that tilde means "modeled as"
+base.model <- paste(i, " ~ pop",sep = "")                    #By CBK: paste trait and pop+   - note that tilde means "modeled as"; CHD removed "+" after pop 5-14 because + already appended with each marker
 for(k in index){                                                 #BY CBK: cycle through rows in index, which is the sequence ordered by chr and position
   base.model <- paste(base.model,"+pop:",colnames(geno.and.pheno)[k],sep = "")   #BY CBK:  writing out model of trait modeled by pop plus pop by SNPs in model
 } #end for(k in 4:ncol(geno.and.pheno))
@@ -87,7 +112,7 @@ for(k in index){                                                 #BY CBK: cycle 
 JL.model <- lm(paste(base.model, sep = ""), data = geno.and.pheno)    # linear model of trait modeled by pop, pop:SNPs specifying data in geno.and.pheno
 
 pop.by.marker.effects <- summary(JL.model)$coefficients[-c(1:25),]      # obtain descriptive statistics for linear model and model coefficients for pop and SNP within pop, access individual columns with model coefficients
-         #changed 26 back to 25 - THIS CONTRIBUTED TO THE LOSS OF POP1:snp1 EFFECT IN ALL POP.BY.MKR.EFFECT FILES
+         #CBK changed 26 back to 25 - THIS CONTRIBUTED TO THE LOSS OF POP1:snp1 EFFECT IN ALL POP.BY.MKR.EFFECT FILES
 head(pop.by.marker.effects)                                              #header for this data matrix pop term, estimate, stderr, tvalue, prob, FDR adj pvalue
 
 #Perform the FDR procedure on the P-values from pop.by.marker.effects
@@ -97,17 +122,17 @@ head(pop.by.marker.effects)                                              #header
  pop.by.marker.effects <- cbind(pop.by.marker.effects, adjp[,2])
  colnames(pop.by.marker.effects)[5] <- "FDR_Adjusted_P-values"
 
-#Write out the results, put it in the same directory as the JL results from TASSEL
+#Write out the results, put the in the same directory as the JL results from TASSEL
  pop.by.marker.effects <- cbind(rownames(pop.by.marker.effects), pop.by.marker.effects)
  colnames(pop.by.marker.effects)[1] <- "Term"
  
- setwd(paste(home.dir, "\\Data_for_1pct_Support_Intervals\\JL_output\\JL_model_modified_SI01\\Pop_by_mkr_est_SI01_verified\\", sep = ""))
- write.table(pop.by.marker.effects, paste("Pop.by.Marker.Effect.Estimates.from.R.", trait ,".SI01.txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
+ #setwd(paste(home.dir, "\\validate_CBK.AEL\CHD_Tassel3fromSF_modified0.01\Allelic_Effect_Estimates.no.MultiColl\\", sep = ""))        #commented out CHD 5-11--moved up to top
+ write.table(pop.by.marker.effects, paste(popByMarker.path,"Pop.by.Marker.Effect.Estimates.from.R.",i,".SI01.txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
 
 #################################################################################################################################################################################
 #For loop through all chromosomes, which will fit a separate GLM model for each chromosome and output all residuals
 
-setwd(paste(home.dir,"\\Residuals_for_GWAS_SI01" ,sep = ""))
+#setwd(paste(home.dir,"\\Residuals_for_GWAS_SI01" ,sep = "")) #CHD commented out 5/14--moved to top.
                                                                  
 #test:---model.order <- model.order[-c(1:10), ]
 
@@ -126,7 +151,7 @@ for(j in 1:10){
    model.order.temp <- model.order.temp[-which(model.order.temp[,2] == j),]
   } #end if
   index <- model.order.temp[,5]+3
-  base.model <- paste(trait, " ~ pop+",sep = "")
+  base.model <- paste(i, " ~ pop",sep = "")   #CHD removed "+" after pop 5/14 because one is already appended by terms below
   for(k in index){
    base.model <- paste(base.model,"+pop:",colnames(geno.and.pheno.mod)[k],sep = "")
   } #end for(k in 4:ncol(geno.and.pheno))
@@ -147,10 +172,6 @@ for(j in 1:10){
   resid <- resid[,-1]
   colnames(resid) <- c("Sample", "Chr1", "Chr2", "Chr3", "Chr4", "Chr5", "Chr6", "Chr7", "Chr8", "Chr9", "Chr10")
 
- write.table(resid, paste("Resid.", trait ,".SI.01.txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
+ write.table(resid, paste(residuals.path,"Resid.",i,".SI.01.txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
 
 }# End for(i in trait)
-
-
-
-

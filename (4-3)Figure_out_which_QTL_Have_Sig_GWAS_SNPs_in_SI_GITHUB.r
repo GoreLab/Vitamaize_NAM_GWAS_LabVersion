@@ -6,8 +6,6 @@ rm(list = ls())
 ### (2) candidate gene list (see sample)
 ### (3) GWAS Results Summaries generated from script (3-1), "Complete Results..." file
 
-
-
 extractinate.GWAS.SNPs <- function(){
   #Function 1 should begin here
   
@@ -44,11 +42,11 @@ extractinate.GWAS.SNPs <- function(){
  
   
   
-  #Obtain the GWAS results for this trait, and filter out all SNPs with RMIP < 0.05
+  #Obtain the GWAS results for this trait, and filter out all SNPs with RMIP < cutoff specified at top of script (5 is default)
   #if (trait %in% multicollinear.traits){
   #GWAS.results <- read.table(paste(home.dir,location.of.GWAS.results,trait,"_no_collin\\Complete_Results_",trait,"_no_collin.txt", sep = ""),head = TRUE)} else {
-  GWAS.results <- read.table(paste(home.dir,location.of.GWAS.results,trait,"\\Complete_Results_",trait,".txt", sep = ""),head = TRUE)#}
-  GWAS.results <- GWAS.results[-which(GWAS.results[,ncol(GWAS.results)] < 5),]
+  GWAS.results <- read.table(paste(raw.GWAS.results.path,trait,"_iterations/Complete_Results_",trait,".txt", sep = ""),head = TRUE)#}
+  GWAS.results <- GWAS.results[-which(GWAS.results[,ncol(GWAS.results)] < RMIP_cutoff),]
   
   
   #If there are no SNPs within the JL support interval, STOP the script. Print out a message saying that JL and GWAS results do not overlap.
@@ -68,19 +66,29 @@ extractinate.GWAS.SNPs <- function(){
 
 
 #Set the working directory
-setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
+setwd("C:/Users/chd45/Documents/Projects/NAM_GP/Inputs/JL/")                                #CHD added 5-27
 home.dir <- getwd()
-location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV GWAS 25fam_HMPonly_TASSEL3_alpha01_2015 corr\\"
-output.dir <- "\\#Summary_files\\"
-
+raw.GWAS.results.path = paste(home.dir, "/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/GWAS_Analysis/GWAS_25fam_HMPonly_TASSEL3_alpha01_2015_corr/",sep='')
+trait.set <- "tocos" #Options are "carots" or "tocos"
+RMIP_cutoff = 5
+geno.path = paste(home.dir, "/validate_CBK.AEL/",sep='')
+tabSummary.path = paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/Tabular_Summaries/",sep='')
 
 #Read in the appropriate files
 # summary without common support intervals
-tabular.summary <- read.table(paste(home.dir,"\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Tab_Sum_T3_2015_SI01_with_Common_SI_to_add_GWAS_nonMC_traits.txt", sep = ""), head = TRUE)
+tabular.summary <- read.table(paste(tabSummary.path,"/Tab_Sum_with_Common_SI_Info_left_bound.txt", sep = ""), head = TRUE)
 # summary with common support intervals
 #tabular.summary <- read.table(paste(home.dir,"\\(16)Generating Robust Files for Group Review\\Generating overlapping support intervals\\Tab_Sum_T3_2015_SI01_with_Common_SI_Info.txt", sep = ""), head = TRUE)
 
-candidate.gene.list <- read.table(paste(home.dir,"\\(16)Generating Robust Files for Group Review\\Adding family info to JL tabulated results_SI01\\carot_candidate_genes.txt", sep = ""), head = TRUE)
+#Read in the candidate genes
+if (trait.set == "carots"){
+  #setwd(paste(home.dir, "\\(16)Generating Robust Files for Group Review\\Adding family info to JL tabulated results_SI01", sep = ""))
+  candidate.gene.list <- read.table(paste(geno.path,"carot_candidate_genes.txt",sep=''), head = TRUE)
+}
+if (trait.set == "tocos"){
+  candidate.gene.list <- read.table(paste(geno.path,"Tocochromanol_Candidate_Gene_List_GRZMs_R.formatted.txt",sep=''), head = TRUE)
+}
+
 #multicollinear.traits <- c("BCAR_RUV", "ZEA_RUV", "TOTCAR_RUV")
 
 #Run this for loop
@@ -88,6 +96,9 @@ the.GRZM.results <- NULL
 the.SNP.results <- NULL
 for(i in 1:nrow(tabular.summary)){
   trait <- as.character(tabular.summary[i,1])
+  if(trait == "Total_Tocopherols"){trait = "totalT"}
+  if(trait == "Total_Tocotrienols"){trait = "totalT3"}
+  if(trait == "Total_Tocochromanols"){trait = "totalTocochrs"}
   QTL <- as.character(tabular.summary[i,6])
   #For loop through all rows of the tabluar summary
   the.GWAS.SNP.numbers.and.GRZMs.in.SI <- extractinate.GWAS.SNPs()
@@ -99,5 +110,4 @@ for(i in 1:nrow(tabular.summary)){
 tabular.summary <- cbind(tabular.summary, the.GRZM.results, the.SNP.results)
 
 #Output the updated tabular summary
-setwd(paste(home.dir,location.of.GWAS.results,output.dir, sep = ""))
-write.table(tabular.summary, "Tab_Sum_Carot_alpha.01_SI_with_Overlapping_GWAS_SNPs_T3_2015_nonconcat.txt", sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(tabular.summary, paste(tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_SI_with_Overlapping_GWAS_SNPs_2015.txt",sep=''), sep = "\t", row.names = FALSE, quote = FALSE)

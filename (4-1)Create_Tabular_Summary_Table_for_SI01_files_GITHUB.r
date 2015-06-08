@@ -6,30 +6,47 @@ rm(list = ls())
 ### (1) imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt (GBS SNPs)
 ### (2) candidate gene list (see sample)
 ### (3) transformed BLUEs
-### (4) JL model output, with NA in pop term row (modified version)
+### (4) JL model output, with NA in pop term row (modified version) and residual row removed
 ### (5) Marker effect estimates from script (2-2)
 
 
-setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
+#setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
+setwd("C:/Users/chd45/Documents/Projects/NAM_GP/Inputs/JL/")                                #CHD added 5-14
 home.dir <- getwd()
+geno.path = paste(home.dir, "/validate_CBK.AEL/",sep='')
+pheno.path = paste(home.dir, "/Phenotypes/",sep ='')
+PVE.byFamily = TRUE
+JL.path = paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/R.JL.no.MultiColl/Toco_FinalModels_postMCCorrPostRescan-whenApplicable/",sep='')
+popByMarker.path = paste(home.dir, "/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/Allelic_Effect_Estimates.no.MultiColl/", sep = "")
+PVEvalidat.path = paste(home.dir, "/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/PVE_Documentation_and_Validation/",  sep = "")
+tabSummary.path = paste(home.dir,"/validate_CBK.AEL/CHD_Tassel3fromSF_modified0.01/Tabular_Summaries/",sep='')
+trait.set <- "tocos" #Options are "carots" or "tocos"
+BLUE.or.BLUP <- "BLUE"  #Options are "BLUE" and "BLUP"
+test <- FALSE #Options are TRUE and FALSE
 
 #Read in the gneotypic data
-setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\GBS_SNPs\\", sep = ""))
-genotypes <- read.table("imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt", head = TRUE)
+#setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\GBS_SNPs\\", sep = ""))
+genotypes <- read.table(paste(geno.path,"imputedMarkers.allchr.0.1cm.final.Panzea.consolidated.B.txt",sep=''), head = TRUE)
 
 #Read in the candidate genes
-setwd(paste(home.dir, "\\(16)Generating Robust Files for Group Review\\Adding family info to JL tabulated results_SI01", sep = ""))
-candidate.gene.list <- read.table("carot_candidate_genes.txt", head = TRUE)
+if (trait.set == "carots"){
+  #setwd(paste(home.dir, "\\(16)Generating Robust Files for Group Review\\Adding family info to JL tabulated results_SI01", sep = ""))
+  candidate.gene.list <- read.table(paste(geno.path,"carot_candidate_genes.txt",sep=''), head = TRUE)
+}
+if (trait.set == "tocos"){
+  candidate.gene.list <- read.table(paste(geno.path,"Tocochromanol_Candidate_Gene_List_GRZMs_R.formatted.txt",sep=''), head = TRUE)
+}
 
-# NOTE that trait loop was not run... rather each trait was run individually
+# NOTE that trait loop was not run *for carotenoids*... rather each trait was run individually
 
-#Loop around the traits.
-trait <- c("LUT_RUV", "ZEA_RUV","ZEI_RUV","BCRY_RUV","ACAR_RUV",
-  "PHYF_RUV","THLYC_RUV", "BCAR_RUV", "TOTCAR_RUV") 
-#trait.multicollinearity <- c("BCAR_RUV", "TOTCAR_RUV",  "ZEA_RUV") 
-BLUE.or.BLUP <- "BLUE"  #Options are "BLUE" and "BLUP"
-tocos.or.carots <- "Carots" #Options are "Tocos" or "Carots"
-test <- FALSE #Options are TRUE and FALSE
+#Loop around the traits.                                #CHD 5-14 loop made so that carots or tocos can be run automatically from top of script.
+if (trait.set == "carots"){
+  trait <- c("LUT_RUV", "ZEA_RUV","ZEI_RUV","BCRY_RUV","ACAR_RUV","PHYF_RUV","THLYC_RUV","BCAR_RUV", "TOTCAR_RUV")    
+  trait.collinear <- c("ZEA_RUV","BCAR_RUV", "TOTCAR_RUV") 
+} else if (trait.set == "tocos"){
+  trait <- c("aT","aT3","dT","dT3","gT","gT3","PC8","totalT","totalT3","totalTocochrs")       #CHD added 5-11
+  trait.collinear <- c("aT3","dT3","gT3","totalT3","totalTocochrs")   
+}else{print("Error: no trait set selected. Please specify carots or tocos.")}
                                 
 pop.seq <- as.data.frame(as.factor(c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13",
                                     "14", "15", "16", "18", "19", "20", "21", "22", "23", "24", "25", "26")))
@@ -42,16 +59,20 @@ colnames(NAM.pops) <- c("Pop.num", "Pop.Founders")
 
 Results <- NULL
 for(i in trait){
-
-  #Read in the results from JL analysis
   
-  #if(i %in% trait.multicollinearity){
-    #setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\JL_output\\JL_model_modified_SI01\\",  sep = ""))
-    #TASSEL.model.results <- read.table(paste(i, "_JL_model_modified_SI01_2015.txt", sep = "") , head = TRUE)  
-  #}else{
-    setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\JL_output\\JL_model_modified_SI01\\",  sep = ""))
-    TASSEL.model.results <- read.table(paste(i, "_JL_model_modified_SI01_2015.txt"   , sep = "") , head = TRUE)
-  #}
+  #Read in the results from JL analysis
+  if (trait.set == "carots"){
+      #setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\JL_output\\JL_model_modified_SI01\\",  sep = ""))
+      TASSEL.model.results <- read.table(paste(JL.path,i, "_JL_model_modified_SI01_2015.txt"   , sep = "") , head = TRUE)
+    }
+  
+  if (trait.set == "tocos"){
+    if (i %in% trait.collinear){   
+      TASSEL.model.results <- read.table(paste(JL.path,"MC_corrected_",i,"_postRescan_R.formatted.txt", sep = "") , head = TRUE)        #CHD added loop 5-14 to handle both MC and non-MC traits
+    } else {
+      TASSEL.model.results <- read.table(paste(JL.path,i,"_model_3fromSF_0.01_Final_R.formatted.txt", sep = "") , head = TRUE)
+    }
+  }
   
   if(is.numeric(TASSEL.model.results[,2]) == FALSE){
     print(paste("The chromosome column in ", i," model results needs to be numeric. Please change this before proceeding.", sep = ""))
@@ -89,8 +110,12 @@ for(i in trait){
     
   ########################## Calculate PVE
   #### Read in the phenotypic data, and merge it to the genotypic data
-  setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\Phenotypes\\Phen_files_no_trait_prefix\\",  sep = ""))
-  pheno.data <- read.table(paste(i,"_BLUE_outtrans.txt", sep = ""), head = TRUE)
+  #setwd(paste(home.dir, "\\(9)JL Analysis\\Permutations\\Phenotypes\\Phen_files_no_trait_prefix\\",  sep = ""))
+  if (trait.set == "carots"){
+    pheno.data <- read.table(paste(pheno.path,i,"_BLUE_outtrans.txt", sep = ""), head = TRUE)
+  } else if (trait.set == "tocos"){
+    pheno.data <- read.table(paste(pheno.path,"BLUEs_No_Outliers_Transformed_all_for_TASSEL_",i,".txt", sep = ""), head = TRUE)
+  }
   
   geno.reduced <- genotypes[which(genotypes[,1] %in% TASSEL.model.results[,4]),-c(2:5)]
   geno.reduced.formatted <-as.data.frame(t(geno.reduced[,-1]))
@@ -99,7 +124,7 @@ for(i in trait){
 
 
   #pheno.data will always have more data becuase IBM is included in the phenotypic data.
-
+  colnames(pheno.data)[1] = "Geno_Code" #line added by CHD 5-14; toco pheno files are formatted for TASSEL so use <trait> header format; this line will unify with carot format for the column needed for merge.
   geno.and.pheno <- merge(pheno.data, geno.reduced.formatted, by.x = "Geno_Code", by.y = "row.names")
 
   #Add a population column
@@ -117,8 +142,8 @@ for(i in trait){
   
   #For validation. 
   if(test == TRUE){
-    setwd(paste(home.dir, "\\PVE_Documentation_and_Validation\\",  sep = ""))
-    write.table(pheno.data.temp, paste("Pheno.data.temp.", i,".txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
+    #setwd(paste(home.dir, "\\PVE_Documentation_and_Validation\\",  sep = ""))  #CHD moved up top 5-14
+    write.table(pheno.data.temp, paste(PVEvalidat.path,"Pheno.data.temp.", i,".txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
   }
   
   ####Calculate the following summary statistics: 
@@ -128,7 +153,7 @@ for(i in trait){
 
   #Sample size within each family
   nf.vector <- as.vector(tapply(pheno.data.temp[,3], pheno.data.temp[,2], length))
- 
+  
   #Overall sample size
   N <- sum(nf.vector)
   nf.vector.by.N <- nf.vector/N
@@ -142,10 +167,9 @@ for(i in trait){
     #pop.by.marker.effects <-  read.table(paste("Pop.by.Marker.Effect.Estimates.from.R.no.multicollinearity.test.", i,".txt", sep = ""), sep = "\t", head = TRUE)
   #}else{
     #setwd(paste(home.dir, "\\((9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Effect_estimates_TASSEL3_alpha01_2015\\",  sep = ""))
-    setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Effect_estimates_TASSEL3_alpha01_2015\\")
+    #setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Effect_estimates_TASSEL3_alpha01_2015\\")  #CHD commented out 5-14
     
-    pop.by.marker.effects <-  read.table(paste("Pop.by.Marker.Effect.Estimates.from.R.", i,".SI01_2015.txt", sep = ""), sep = "\t", head = TRUE)
-   #pop.by.marker.effects <-  read.table(paste("Pop.by.Marker.Effect.Estimates.from.R.",i,".SI01_2015.txt", sep = ""), sep = "\t", head = TRUE)
+  pop.by.marker.effects <-  read.table(paste(popByMarker.path,"Pop.by.Marker.Effect.Estimates.from.R.", i,".SI01.txt", sep = ""), sep = "\t", head = TRUE) #CHD note 5-14: CBK carot files appear to have had _2015 suffix
   #}
 
   
@@ -163,6 +187,7 @@ for(i in trait){
   
   #Set a PVE results vector to NULL
   PVE.results <- NULL
+  print(i)
   #For loop using j as an index
   for(j in unique(pop.by.marker.effects[,2])){
     #Extract the corresponding additive effect estimates 
@@ -170,12 +195,13 @@ for(i in trait){
     
     #For validation
     if(test == TRUE){
-      setwd(paste(home.dir, "\\PVE_Documentation_and_Validation\\",  sep = ""))
-      write.table(additive.effects, paste("Additive.effects.temp.", i,".txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
+      #setwd(paste(home.dir, "\\PVE_Documentation_and_Validation\\",  sep = ""))
+      write.table(additive.effects, paste(PVEvalidat.path,"Additive.effects.temp.", i,".txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
     }
   
    
     if(nrow(additive.effects) != 25){
+     print("There were fewer than 25 rows in additive effects.")
      #Objective: Put nf.vector, Vf.vector into a matrix, and then merge it with the additve effect estimates
      vectors <- as.data.frame(cbind(pop.seq, nf.vector, Vf.vector))    
      add.and.vectors <- merge(additive.effects, vectors, by.x = "pop.term", by.y = "Pop")
@@ -200,21 +226,50 @@ for(i in trait){
     
      PVE.marker <- c(j, (num/den))
 
-     
     }else{
+      if (PVE.byFamily == FALSE){
+        sq.term <- additive.effects[,3]^2
+        num.left.term  <- ((2/N)*(crossprod(nf.vector,sq.term)))
+        num.right.term <- ((1/N)*(crossprod(nf.vector,marker.effects[,1])))^2
+        num <- num.left.term - num.right.term
+        PVE.by.term <- num/den
+        PVE.marker <- c(j, (num/den))
+      }else if (PVE.byFamily == TRUE){
+        #Genotype scores within each family--added by CHD 6/4/2015, for new Bradbury PVE calculation that accounts for sampling variation (allele freqs not always = 0.5)
+        colnames(geno.and.pheno)[1] = "Taxa"
+        thisGeno.with.Taxa = geno.and.pheno[c("Taxa",j)]
+        print(j)
+        genoScores = merge(pheno.data.temp,thisGeno.with.Taxa,by.x=1,by.y = 1) #append the genos just for this marker to line,pop,pheno cols 
         
-    #Calculate the PVE
-     a.sq <- additive.effects[,3]^2
-     num.left.term  <- ((2/N)*(crossprod(nf.vector,a.sq)))
-     
-     num.right.term <- ((1/N)*(crossprod(nf.vector,additive.effects[,3])))^2
-     
-     
-     num <- num.left.term - num.right.term
-
-    
-     PVE.marker <- c(j, (num/den))
-    }
+        #Only to see which MAFs are closest to 0.5 (for comparison to previous PVE calcs)
+        minor.counts.vector = as.vector(tapply(genoScores[,4], genoScores[,2],function(scoreSet){
+          s=as.numeric(scoreSet)
+          return(1*length(which(s<=0.5 & s<1.5)+2*length(which(s>=1.5 & s<=2))))
+        }))
+        maf = minor.counts.vector/(2*nf.vector)
+        if(length(which(maf >= 0.5))>0){print("Error: minor allele frequency >= 0.5")}
+        print(maf)
+        pooled_maf = (1/N)*crossprod(nf.vector, maf)
+        print(pooled_maf)
+        
+        #actual PVE calculation
+        genoScores[,4] = genoScores[,4] - 1 #need to have -1,0,1 coding so that homozyg minor allele has effect of -n
+        pop.a = additive.effects[,c(1,3)]
+        genoScores.by.Effects.vector = genoScores[,4]
+        for (this.pop in unlist(pop.seq)){
+          #print(this.pop)
+          a = pop.a[which(pop.a[,1]==this.pop),2]
+          for (this.row in 1:nrow(genoScores)){
+            #calculate additive effect * marker score, *-1 because effect estimate  (including sign) is for B73 reference allele, which is now coded as -1
+            if(genoScores[this.row,2]==this.pop){genoScores.by.Effects.vector[this.row]=-1*a*genoScores.by.Effects.vector[this.row]}
+          }
+        }
+        pop_Scores.by.Effects = cbind(genoScores[,2],genoScores.by.Effects.vector)
+        Vg.vector = tapply(pop_Scores.by.Effects[,2],pop_Scores.by.Effects[,1],var)
+        Vg.den <- (1/N)*crossprod(nf.vector, Vg.vector) 
+        PVE.marker <- c(j, (Vg.den/den))
+      } 
+     }
     #Append each result. Note that the name of the marker MUST be included as well. 
     PVE.results <- rbind(PVE.results,  PVE.marker)
        
@@ -276,8 +331,6 @@ colnames(Results) <- c("Trait", "Chr", "Peak_Position", "Supp_Int_Left", "Supp_I
 
 
 #Write the results into a table
-setwd(paste(home.dir,"\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\", sep = ""))    
+#setwd(paste(home.dir,"\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\", sep = ""))    
 #write.table(Results, paste("Tabular_Summary_of_JL_",tocos.or.carots,"_Results_for_all traits_SI01.txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(Results, paste("Tabular_Summary_of_JL_",tocos.or.carots,"_Results_for_all_traits_SI01_2015_T3.txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)
-
-
+write.table(Results, paste(tabSummary.path,"Tabular_Summary_of_JL_",trait.set,"_Results_for_all_traits_SI01_newPVEv2_corrsigns.txt", sep = ""), sep = "\t", row.names = FALSE, quote = FALSE)

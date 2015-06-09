@@ -5,16 +5,11 @@ rm(list = ls())
 ### (2) Imputed genotype matrices from get.me.my.snps.4 perl (GMMS4) script
 ### (3) GWAS summary files (Complete.Results...)
 
-
-
-
-
+dir.for.all.imputed.SNPs <-"C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Results_from_GMMS4_imputed_matrix_T3_2015\\Files_from_GMMS4\\"
+dir.for.GWAS.results <- "C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(10)GWAS Analysis\\RUV GWAS 25fam_HMPonly_TASSEL3_alpha01_2015 corr\\"
 
 #generate list of QTL numbers and common support intervals for GMMS4 script
 all.JL.QTL.SI <- read.table("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Common_SI_array_for_tri_auto_T3_2015_SI01_new_GWAS.txt", head=TRUE)
-  #NOTE that new GWAS file contains only six traits as per Dean's request on 3/3/2015
-
- ###Extract individually (problem in file): QTL   9
 
 for (k in 1:38){         #where k is total number of common support intervals
   QTL <- all.JL.QTL.SI[k,1]
@@ -38,12 +33,10 @@ for (k in 1:38){         #where k is total number of common support intervals
 #read in imputed genotype matrix file for specified chromosomal region from GMMS4
     #NOTE for GMMS4 select common JL support interval for region of interest
 
-dir.for.all.imputed.SNPs <-"C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Results_from_GMMS4_imputed_matrix_T3_2015\\Files_from_GMMS4\\"
 setwd(dir.for.all.imputed.SNPs)
 GWAS.SNPs.imputed.all <- read.delim(paste("results_file_QTL",QTL,"_chr_",chr,"_region_",common.SI,".txt", sep=""))
 
 #read in sig RMIP GWAS SNPs by trait
-dir.for.GWAS.results <- "C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(10)GWAS Analysis\\RUV GWAS 25fam_HMPonly_TASSEL3_alpha01_2015 corr\\"
 
 dir.create(paste("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Results_from_GMMS4_imputed_matrix_T3_2015\\QTL_",QTL,"_imputed_matrix_for_",gene, sep=""))
 output.folder <- (paste("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Results_from_GMMS4_imputed_matrix_T3_2015\\QTL_",QTL,"_imputed_matrix_for_",gene, "\\", sep=""))

@@ -3,11 +3,12 @@ rm(list = ls())
 ###Required Files:
 ### (1) FPKM matrix with log2 transformed data, organized by founder, named FPKM.table.by.gene.annotation.complete.founder.matrix.txt
 ### (2) GAPIT source files
-### (3) Backtransformed effect estimate files, from script (2-3)
-### (4) GWAS Results Summary files, from script (3-1)
-### (5) QTL array file called in script (5-1)
-### (6) Imputed and extracted genotype matrices from script (5-1)
-### (7) Mock placeholder Hapmap genotype files for each chromosome, used as default if there are no SNPs in the selected interval
+### (3) Tabular summary file
+### (4) TRANSFORMED effect estimate files, from script (2-2)
+### (5) GWAS Results Summary files, from script (3-1)
+### (6) QTL array file called in script (5-1)
+### (7) Imputed and extracted genotype matrices from script (5-1)
+### (8) Mock placeholder Hapmap genotype files for each chromosome, used as default if there are no SNPs in the selected interval
 
 
 ##########################################################################
@@ -62,23 +63,6 @@ get.me.my.FPKM.values <- function(absolute.final.data.set.FPKM = NA, gene.ID = N
   }
   return(FPKM.matrix)
 }# end get.me.my.FPKM.values
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -178,20 +162,22 @@ colnames(NAM.pops) <- c("Pop.num", "Pop.Founders")
 #effect.estimates.from.entire.trait <- read.table(paste(home.dir,location.of.effect.estimates,
                                        #"NonStd.Pop.by.Marker.Effect.Est.from.R.B73centered.SI01.",trait,".no.col.txt", sep = ""),head = TRUE)} else {
 effect.estimates.from.entire.trait <- read.table(paste(home.dir,location.of.effect.estimates,
-                                      "NonStd.Pop.by.Marker.Effect.Est.from.R.B73centered.SI01.2015.",trait,".txt", sep = ""),head = TRUE)#} 
-                                      ####IMPORTANT!!!!!!!!!!!  This file needs to have backtransformed estimates in the last column
+                                      "Pop.by.Marker.Effect.Estimates.from.R.",trait,".SI01_2015.txt", sep = ""),head = TRUE)#} 
+                                      ####IMPORTANT!!!!!!!!!!!  Requirement for transformed estimates only changed as of June 2015
 
 
 markerID <-  substr(effect.estimates.from.entire.trait[,1], 7,10000)
 popID <- substr(effect.estimates.from.entire.trait[,1], 1,5)
 
+#transformed.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
+                                #as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), ncol(effect.estimates.from.entire.trait)])
 
-bt.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
-                                as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), ncol(effect.estimates.from.entire.trait)])
+transformed.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
+                                as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), 2])
                                 )
-colnames(bt.effect.estimates.from.QTL) <- c("Population","Back.Trans.Est")
+colnames(transformed.effect.estimates.from.QTL) <- c("Population","Trans.Est")
 
-bt.effect.estimates.from.QTL <- merge(bt.effect.estimates.from.QTL, NAM.pops, by.x = "Population", by.y = "Pop.num")
+transformed.effect.estimates.from.QTL <- merge(transformed.effect.estimates.from.QTL, NAM.pops, by.x = "Population", by.y = "Pop.num")
 
 #Obtain the GWAS results for this trait, and filter out all SNPs with RMIP < 0.05
 #GWAS.results <- read.table(paste(home.dir,location.of.GWAS.results,trait,"\\Complete_Results_",trait,".txt", sep = ""),head = TRUE)
@@ -295,7 +281,7 @@ JL.Correlation.vector <- NULL
 for(i in 1:ncol(numeric.GWAS.SNPs.data.temp)){
   #Merge the JL effect estiamtes and the ith SNP into one file
   the.SNP.of.interest <- data.frame(cbind(rownames(numeric.GWAS.SNPs.data.temp), numeric.GWAS.SNPs.data.temp[,i]))
-  JL.and.SNP.alleles <- merge(bt.effect.estimates.from.QTL, the.SNP.of.interest, by.x = "Pop.Founders", by.y = "X1")
+  JL.and.SNP.alleles <- merge(transformed.effect.estimates.from.QTL, the.SNP.of.interest, by.x = "Pop.Founders", by.y = "X1")
   
   #Calcualte the Spearman rank correlation coefficient
   Correl.Spearman <- cor(JL.and.SNP.alleles[,3], as.numeric(as.character(JL.and.SNP.alleles[,4])), use = "pairwise.complete.obs", method = "spearman")
@@ -363,7 +349,7 @@ for(i in list.of.gene.GRZMs.in.support.interval){
     this.FPKM <- data.frame(cbind(rownames(the.FPKM.values), the.FPKM.values[,j]))
     
     #merge it with the allelic effect estimates
-    JL.effects.and.this.FPKM <- merge(bt.effect.estimates.from.QTL, this.FPKM, by.x = "Pop.Founders", by.y = "X1")
+    JL.effects.and.this.FPKM <- merge(transformed.effect.estimates.from.QTL, this.FPKM, by.x = "Pop.Founders", by.y = "X1")
     
     #calculate Spearman's rank correlation coefficient
     Correl.Spearman <- cor(as.numeric(as.character(JL.effects.and.this.FPKM[,3])), as.numeric(as.character(JL.effects.and.this.FPKM[,4])), 
@@ -375,7 +361,7 @@ for(i in list.of.gene.GRZMs.in.support.interval){
   }#end for(j in 1:ncol(the.FPKM.values))
   
   
-  #bt.effect.estimates.from.QTL
+  #transformed.effect.estimates.from.QTL
   count <- count+1
   
   #Append results to the final.output.FPKM.QTL.effect.table 

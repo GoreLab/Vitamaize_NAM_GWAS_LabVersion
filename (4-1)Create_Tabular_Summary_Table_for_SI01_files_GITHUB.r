@@ -188,6 +188,8 @@ for(i in trait){
   #Set a PVE results vector to NULL
   PVE.results <- NULL
   print(i)
+  maf_allMarkers = NULL
+  pooledmaf_allMarkers = NULL
   #For loop using j as an index
   for(j in unique(pop.by.marker.effects[,2])){
     #Extract the corresponding additive effect estimates 
@@ -244,13 +246,14 @@ for(i in trait){
         #Only to see which MAFs are closest to 0.5 (for comparison to previous PVE calcs)
         minor.counts.vector = as.vector(tapply(genoScores[,4], genoScores[,2],function(scoreSet){
           s=as.numeric(scoreSet)
-          return(1*length(which(s<=0.5 & s<1.5)+2*length(which(s>=1.5 & s<=2))))
+          #return(1*length(which(s<=0.5 & s<1.5)+2*length(which(s>=1.5 & s<=2)))) #includes distance-imputed
+          return(1*length(which(s==1)+2*length(which(s==2))))
         }))
         maf = minor.counts.vector/(2*nf.vector)
         if(length(which(maf >= 0.5))>0){print("Error: minor allele frequency >= 0.5")}
-        print(maf)
+        maf_allMarkers = rbind(maf_allMarkers,maf)
         pooled_maf = (1/N)*crossprod(nf.vector, maf)
-        print(pooled_maf)
+        pooledmaf_allMarkers = c(pooledmaf_allMarkers,pooled_maf)
         
         #actual PVE calculation
         genoScores[,4] = genoScores[,4] - 1 #need to have -1,0,1 coding so that homozyg minor allele has effect of -n
@@ -275,7 +278,10 @@ for(i in trait){
        
   } #End for(j in unique(pop.by.marker.effects[,2]))
   
-  
+  maf.to.print=cbind(maf_allMarkers,as.vector(pooledmaf_allMarkers))
+  rownames(maf.to.print)=as.character(unique(pop.by.marker.effects[,2]))
+  colnames(maf.to.print)=c(unlist(pop.seq),"Pooled")
+  write.table(maf.to.print,paste(PVEvalidat.path,"AlternateAlleleFrequencies_byFamily.txt", sep=''),col.names = TRUE)
   
   ########################### End Calculate PVE 
   
@@ -318,7 +324,7 @@ for(i in trait){
       
 
   #Append these results to the results file
-  Results <- rbind(Results, results.trait)
+  Results <<- rbind(Results, results.trait)
 
 }# End for(i in trait)
 

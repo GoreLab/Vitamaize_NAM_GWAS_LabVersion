@@ -329,13 +329,15 @@ library(multtest)
 setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
 home.dir <- getwd()
 location.of.modified.GAPIT.files <- "\\(21) GAPIT source files\\"
-location.of.effect.estimates <- "\\(12)Standardizing Allelic Effects\\"
-#location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV and MSS folders - original 25fam analyses\\"
-output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Significance Threshold\\FDR_Test_Ancillary_Output_Files\\"
-get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Results_from_GMMS\\"
+location.of.effect.estimates <- "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Effect_estimates_TASSEL3_alpha01_2015\\"
+location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV GWAS 25fam_alldata_alpha01_2015_FINAL\\"
+output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Significance Threshold\\FDR_Test_Ancillary_Output_Files\\"
+get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Results_from_GMMS4_imputed_matrix_T3_2015\\" 
 FPKM.file.dir <- "\\(15)Correlated Expression\\"
-correlation.output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Significance Threshold\\FDR_Corrected_Corr_Results\\"
-fdr.adjusted.for.each.SI.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Significance Threshold\\FDR_Corrected_Corr_Results\\#FDR_Output_Separate_FDR_Adjustment_For_Each_SI\\"
+correlation.output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Significance Threshold\\FDR_Corrected_Corr_Results\\"
+fdr.adjusted.for.each.SI.dir <- correlation.output.dir
+
+
 
 #Source in the modified GAPIT files
 setwd(paste(home.dir,location.of.modified.GAPIT.files,sep = ""))
@@ -354,7 +356,7 @@ trait.list <- as.character(unique(tabular.summary[,1]))
 #For loop through each trait
 for(trait in trait.list){
   #Read in the raw P-values
-  setwd(paste(home.dir, correlation.output.dir, trait, "\\", sep = ""))
+  setwd(paste(home.dir, correlation.output.dir, sep = ""))
   the.raw.P.values <- read.table(paste("Raw.P.values.for.", trait, ".txt", sep = ""),head = TRUE)
   
   #For each unique QTL

@@ -280,9 +280,14 @@ the.extractinator <- function(tabular.summary = tabular.summary, QTL = QTL, Gene
   popID <- substr(effect.estimates.from.entire.trait[,1], 1,5)
   
   
+  #transformed.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
+  #                                          as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), ncol(effect.estimates.from.entire.trait)])
+  #)
+  
   transformed.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
-                                            as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), ncol(effect.estimates.from.entire.trait)])
-  )
+                                as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), 2])
+                                )
+  
   colnames(transformed.effect.estimates.from.QTL) <- c("Population","Trans.Est")
   
   transformed.effect.estimates.from.QTL <- merge(transformed.effect.estimates.from.QTL, NAM.pops, by.x = "Population", by.y = "Pop.num")
@@ -301,12 +306,12 @@ library(multtest)
 setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
 home.dir <- getwd()
 location.of.modified.GAPIT.files <- "\\(21) GAPIT source files\\"
-location.of.effect.estimates <- "\\(12)Standardizing Allelic Effects\\"
-location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV and MSS folders - original 25fam analyses\\"
-output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Significance Threshold\\FDR_Test_Ancillary_Output_Files\\"
-get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Results_from_GMMS\\"
+location.of.effect.estimates <- "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Effect_estimates_TASSEL3_alpha01_2015\\"
+location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV GWAS 25fam_alldata_alpha01_2015_FINAL\\"
+output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Significance Threshold\\FDR_Test_Ancillary_Output_Files\\"
+get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Results_from_GMMS4_imputed_matrix_T3_2015\\" 
 FPKM.file.dir <- "\\(15)Correlated Expression\\"
-correlation.output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis\\Significance Threshold\\FDR_Corrected_Corr_Results\\"
+correlation.output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Significance Threshold\\FDR_Corrected_Corr_Results\\"
 
 #Source in the modified GAPIT files
 setwd(paste(home.dir,location.of.modified.GAPIT.files,sep = ""))
@@ -316,7 +321,7 @@ source("GAPIT.Numericalization.Modified.R")
 setwd(home.dir)
 
 #Read in the appropriate files
-tabular.summary <- read.table(paste(home.dir,"\\(16)Generating Robust Files for Group Review\\Adding family info to JL tabulated results_SI01\\Tab_Sum_of_JL_Carots_Results_for_all traits_SI01_compiled.txt", sep = ""), head = TRUE)
+tabular.summary <- read.table(paste(home.dir,"\\(31) Tabular Summary Info for 2015 analysis\\LOD scores\\Tab_Sum_Carot_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_recsuppregions_LODscores.txt", sep = ""), head = TRUE)
 absolute.final.data.set.FPKM <- read.table(paste(home.dir,FPKM.file.dir,"FPKM.table.by.gene.annotation.complete.founder.matrix.txt", sep = ""), head = TRUE)
 
 trait.list <- as.character(unique(tabular.summary[,1]))

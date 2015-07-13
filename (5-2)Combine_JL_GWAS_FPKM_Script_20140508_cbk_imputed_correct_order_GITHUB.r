@@ -60,8 +60,8 @@ home.dir <- getwd()
 location.of.modified.GAPIT.files <- "\\(21) GAPIT source files\\"
 location.of.effect.estimates <- "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Effect_estimates_TASSEL3_alpha01_2015\\"
 location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV GWAS 25fam_alldata_alpha01_2015_FINAL\\"
-output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Results_from_R\\"
-get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Results_from_GMMS4_imputed_matrix_T3_2015\\"           # this was changed
+output.dir <- "\\(15)Correlated Expression\\R_results_FPKM1_logtyes\\"
+get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015_union\\Results_from_GMMS4_imputed_matrix_T3_2015\\"           # this was changed
 FPKM.file.dir <- "\\(15)Correlated Expression\\"
 
 
@@ -74,7 +74,7 @@ setwd(home.dir)
 
 #Read in the appropriate files
 tabular.summary <- read.table(paste(home.dir,"\\(31) Tabular Summary Info for 2015 analysis\\LOD scores\\Tab_Sum_Carot_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_recsuppregions_LODscores.txt", sep = ""), head = TRUE)
-absolute.final.data.set.FPKM <- read.table(paste(home.dir,FPKM.file.dir,"FPKM.table.by.gene.annotation.complete.founder.matrix.txt", sep = ""), head = TRUE)
+absolute.final.data.set.FPKM <- read.table(paste(home.dir,FPKM.file.dir,"FPKM.table.by.gene.annotation.complete.founder.matrix.threshold.1.log2trans.txt", sep = ""), head = TRUE)
 										
 		
 ###generate list of QTL numbers and common support intervals for GMMS4 script
@@ -83,12 +83,12 @@ all.JL.QTL.SI <- read.table("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid N
 			
 ### automating generation of triangulation files from all support intervals
 ###	using the loops from "extracting_imputed_genotype_matrix_automate.r" script		
-for (q in 16:39){
+for (q in seq(1:39)){
   common.SI <- all.JL.QTL.SI[q,1]
   gene <- as.character(all.JL.QTL.SI[q,5])
 
-  dir.create(paste("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Results_from_R\\QTL_",common.SI,"_imputed.ordered.tri.files.for.",gene, sep=""))
-  output.folder <- (paste("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Results_from_R\\QTL_",common.SI,"_imputed.ordered.tri.files.for.",gene, "\\", sep=""))
+  dir.create(paste("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\R_results_FPKM1_logtyes\\QTL_",common.SI,"_imputed.ordered.tri.files.for.",gene, sep=""))
+  output.folder <- (paste("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\R_results_FPKM1_logtyes\\QTL_",common.SI,"_imputed.ordered.tri.files.for.",gene, "\\", sep=""))
 
 
   ### regenerate loop for trait list
@@ -134,7 +134,7 @@ pop.seq <- as.data.frame(as.factor(c("pop01", "pop02", "pop03", "pop04", "pop05"
                                      "pop20", "pop21", "pop22", "pop23", "pop24", 
                                      "pop25", "pop26")))
 founder.names <- as.data.frame(c("B97", "CML103", "CML228", "CML247", "CML277", "CML322", "CML333", "CML52", 
-                                 "CML69", "HP301", "Il14H", "KI11", "KI3", "KY21", "M162W", "M37W", "MO18W", 
+                                 "CML69", "HP301", "IL14H", "KI11", "KI3", "KY21", "M162W", "M37W", "MO18W",                    ### Founder name for Il14H changed to IL14H on  7/13/15
                                  "MS71", "NC350", "NC358", "OH43", "OH7B", "P39", "TX303", "TZI8"))
 NAM.pops <- cbind(pop.seq, founder.names)
 colnames(NAM.pops) <- c("Pop.num", "Pop.Founders")
@@ -211,11 +211,13 @@ for(i in 1:ncol(numeric.GWAS.SNPs.data.temp)){
   the.SNP.of.interest <- data.frame(cbind(rownames(numeric.GWAS.SNPs.data.temp), numeric.GWAS.SNPs.data.temp[,i]))
   JL.and.SNP.alleles <- merge(transformed.effect.estimates.from.QTL, the.SNP.of.interest, by.x = "Pop.Founders", by.y = "X1")
   
-  #Calcualte the Spearman rank correlation coefficient
+  #Calcualte the Spearman rank correlation coefficient and Pearson coefficient - NOTE: ONLY USING PEARSON IN FINAL OUTPUT
   Correl.Spearman <- cor(JL.and.SNP.alleles[,3], as.numeric(as.character(JL.and.SNP.alleles[,4])), use = "pairwise.complete.obs", method = "spearman")
   
+  Correl.Pearson <- cor(JL.and.SNP.alleles[,3], as.numeric(as.character(JL.and.SNP.alleles[,4])), use = "pairwise.complete.obs", method = "pearson")
+  
   #Append it to JL.Correlation.vector
-  JL.Correlation.vector <- c(JL.Correlation.vector, Correl.Spearman)
+  JL.Correlation.vector <- c(JL.Correlation.vector, Correl.Pearson)
 
 }#end for(i in 1:ncol(numeric.GWAS.SNPs.data.temp))
 final.output.table <- JL.Correlation.vector
@@ -244,10 +246,14 @@ for(i in list.of.gene.GRZMs.in.support.interval){
         the.SNP.of.interest <- data.frame(cbind(rownames(numeric.GWAS.SNPs.data.temp), numeric.GWAS.SNPs.data.temp[,k]))
         SNP.alleles.and.FPKM <- merge(the.SNP.of.interest, the.FPKM.values.of.interest, by.x = "X1", by.y = "X1")
         
-        #Calcualte the Spearman rank correlation coefficient
+        #Calcualte the Spearman rank correlation coefficient and Pearson coefficient - NOTE: USING PEARSON IN FINAL OUTPUT
         Correl.Spearman <- cor(as.numeric(as.character(SNP.alleles.and.FPKM[,2])), as.numeric(as.character(SNP.alleles.and.FPKM[,3])), 
                               use = "pairwise.complete.obs", method = "spearman")
-        correl.vector.temp <- c(correl.vector.temp, Correl.Spearman)
+                              
+        Correl.Pearson <- cor(as.numeric(as.character(SNP.alleles.and.FPKM[,2])), as.numeric(as.character(SNP.alleles.and.FPKM[,3])), 
+                              use = "pairwise.complete.obs", method = "pearson")
+                              
+        correl.vector.temp <- c(correl.vector.temp, Correl.Pearson)
     }#end for(k in 1:ncol(numeric.GWAS.SNPs.data.temp))
     correl.vector.temp <- c(paste(i,"_",colnames(the.FPKM.values)[j],sep = ""), correl.vector.temp)
     final.output.table <- rbind(final.output.table, correl.vector.temp)
@@ -274,7 +280,8 @@ for(i in list.of.gene.GRZMs.in.support.interval){
                                          gene.ID = i, gene.name = list.of.gene.names[which(list.of.gene.GRZMs.in.support.interval == i)], 
                                          print.out.results = FALSE, output.dir = output.dir, home.dir = home.dir)
   
-  temp.result.vector <- i                                       
+  temp.result.vector.Spearman <- i   
+  temp.result.vector.Pearson <- i                                      
   for(j in 1:ncol(the.FPKM.values)){
     #get the jth column of the.FPKM.values
     this.FPKM <- data.frame(cbind(rownames(the.FPKM.values), the.FPKM.values[,j]))
@@ -284,10 +291,14 @@ for(i in list.of.gene.GRZMs.in.support.interval){
     
     #calculate Spearman's rank correlation coefficient
     Correl.Spearman <- cor(as.numeric(as.character(JL.effects.and.this.FPKM[,3])), as.numeric(as.character(JL.effects.and.this.FPKM[,4])), 
-                          use = "pairwise.complete.obs", method = "spearman")    
+                          use = "pairwise.complete.obs", method = "spearman")
+    
+    Correl.Pearson <- cor(as.numeric(as.character(JL.effects.and.this.FPKM[,3])), as.numeric(as.character(JL.effects.and.this.FPKM[,4])), 
+                          use = "pairwise.complete.obs", method = "pearson")    
     
     #append it to a vector of results
-    temp.result.vector <- c(temp.result.vector, Correl.Spearman)
+    temp.result.vector.Spearman <- c(temp.result.vector.Spearman, Correl.Spearman)
+    temp.result.vector.Pearson <- c(temp.result.vector.Pearson, Correl.Pearson)
     
   }#end for(j in 1:ncol(the.FPKM.values))
   
@@ -295,11 +306,11 @@ for(i in list.of.gene.GRZMs.in.support.interval){
   #transformed.effect.estimates.from.QTL
   count <- count+1
   
-  #Append results to the final.output.FPKM.QTL.effect.table 
+  #Append results to the final.output.FPKM.QTL.effect.table, NOTE: USING ONLY PEARSON CORRELATIONS 
   if(count == 1){
-    final.output.FPKM.QTL.effect.table <- temp.result.vector
+    final.output.FPKM.QTL.effect.table <- temp.result.vector.Pearson
   }else{
-    final.output.FPKM.QTL.effect.table <- rbind(final.output.FPKM.QTL.effect.table, temp.result.vector)
+    final.output.FPKM.QTL.effect.table <- rbind(final.output.FPKM.QTL.effect.table, temp.result.vector.Pearson)
   }#end if(count == 1)
   
   

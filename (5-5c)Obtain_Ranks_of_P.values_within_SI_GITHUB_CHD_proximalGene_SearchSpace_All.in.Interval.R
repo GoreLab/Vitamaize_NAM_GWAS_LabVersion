@@ -9,7 +9,7 @@ rm(list = ls())
 
 library(gplots)
 
-user = "chd"              #Options are "cbk" or "chd" (maintains file path differences to keep script easily adaptable)
+user = "cbk"              #Options are "cbk" or "chd" (maintains file path differences to keep script easily adaptable)
 pvals.to.output = "search.range" #Options are 
                           #"1gene": directly hit gene + 1 on either side, or if SNP falls between 2 genes only those 2
                           #"search.range": certain physical distance in each direction from RMIP SNP, even if outside of individual or common S.I.
@@ -17,19 +17,26 @@ pvals.to.output = "search.range" #Options are
 search.range <- 100000    #only is used if pvals.to.output == "search.range"
 
 if(user == 'cbk'){
-  setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015_union\\")
+  setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
   home.dir <- getwd()
-  correlation.output.dir <- "\\Significance Threshold\\FDR_Corrected_Corr_Results\\"
+  correlation.output.dir <- "\\(15)Correlated Expression\\Significance_Threshold_union\\FDR_Corrected_Corr_Results\\"
   location.of.raw.P.value.results <- correlation.output.dir    #also in specific trait folder
   location.of.FDR.P.value.results = correlation.output.dir
-  proximal.genes.dir <- "C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(15)Correlated Expression\\Candidate gene search\\"
-  pval.by.QTL.dir = "\\Significance Threshold\\#Pvalue_by_QTL\\"
+  proximal.genes.dir <- "\\(15)Correlated Expression\\Candidate gene search\\"
+  dir.for.compil.of.tri.summ = "\\(15)Correlated Expression\\Results_from_R_FPKM1_logtyes\\"
+  pval.by.QTL.dir = "\\(15)Correlated Expression\\Significance_Threshold_union\\Pvalue_by_QTL\\"
   trait.set = "Carot" #Options are "Carot" or "tocos"
-  tabSummary.path = "C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(31) Tabular Summary Info for 2015 analysis\\LOD scores\\"
-  location.of.GWAS.results <- "C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env\\(10)GWAS Analysis\\RUV GWAS 25fam_alldata_alpha01_2015_FINAL\\"
+  tabSummary.path = "\\(31) Tabular Summary Info for 2015 analysis\\"
+  location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV GWAS 25fam_alldata_alpha01_2015_FINAL\\"
+  column.of.cSI.in.tab.sum <- 14
+  trait.col.common.key <- 1
+  chr.col.common.key <- 2
+  pos.col.common.key <- 3
   
   #Read in the tabular summary; used below to obtain a list of trait names
-  tabular.summary <- read.table(paste(home.dir,"\\(16)Generating Robust Files for Group Review\\Adding family info to JL tabulated results_SI01\\Tab_Sum_of_JL_Carots_Results_for_all traits_SI01_compiled.txt", sep = ""), head = TRUE)
+  #tabular.summary <- read.table(paste(home.dir,"\\(16)Generating Robust Files for Group Review\\Adding family info to JL tabulated results_SI01\\Tab_Sum_of_JL_Carots_Results_for_all traits_SI01_compiled.txt", sep = ""), head = TRUE)
+  tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_GWAS_FamPVE_common_SI_recsuppregions_LODscores_20150612.txt", sep = ""), head = TRUE)
+
 }
 
 if(user == 'chd'){
@@ -52,10 +59,14 @@ trait.list <- as.character(unique(tabular.summary[,1]))
 
 #CHD added 7/5: Key file so that output files can be labeled by common S.I. number.
 #Note CHD changed to use file with suffix dupSNPremoved in which duplicate SNPs across HapMap v.1 and 2 are consolidated (only allele column was different); otherwise proximal genes were being printed in duplicate
-RMIP.commonSI.key = read.table(paste(home.dir,tabSummary.path,"Complete_Results_allTraits_RMIPgt4_with_QTLnumber_dupSNPremoved.txt", sep = ""), head = TRUE)
+RMIP.commonSI.key = read.table(paste(home.dir,tabSummary.path,"Complete_Results_allTraits_RMIP_test_with_QTLnumber.txt", sep = ""), head = TRUE)
+
+if(user == 'cbk'){
+Common.SI.array = read.table(paste(home.dir,dir.for.compil.of.tri.summ,"Common_SI_array_for_tri_auto_June_2015.txt", sep = ""), head = TRUE)       #needed only by cbk
+}
 
 #For loop through each common S.I.(39 for carot, 48 for toco)
-for(cSI in unique(tabular.summary[,12])){
+for(cSI in unique(tabular.summary[,column.of.cSI.in.tab.sum])){
   print(paste("For common support interval number ",cSI,":",sep=''))
   
   #Initialize master p-value objects that will hold results compiled within a common S.I. (compiled across trait/JL marker pairs for all.in.interval, across RMIP SNPs for 1gene or search.space)
@@ -66,15 +77,26 @@ for(cSI in unique(tabular.summary[,12])){
   
   #For loop through the traits
   for(trait in trait.list){
+  
+    if(user == 'chd'){
     setwd(paste(home.dir,location.of.raw.P.value.results, trait,"\\", sep = ""))
+    }
     
+    if(user == 'cbk'){
+     setwd(paste(home.dir,location.of.raw.P.value.results, sep = ""))
+     }
+     
     #Read in the raw and FDR P-values
     the.raw.P.values <- read.table(paste("Raw.P.values.for.",trait,".txt",sep = ""), head = TRUE, stringsAsFactors = FALSE)
     the.FDR.P.values =  read.table(paste("FDR.Adjusted.P.values.for.",trait,"_by_Q.txt",sep = ""), head = TRUE, stringsAsFactors = FALSE)
     
     #Change dir to master output dir for this common S.I.; final files from this script will be placed here.
-    setwd(paste(home.dir,dir.for.compil.of.tri.summ,"QTL_",cSI,"_imputed.ordered.tri.files/", sep=''))
     
+    if(user == 'cbk'){
+      gene.abbrev <- Common.SI.array[which(Common.SI.array[,1] == cSI),5]                                                    #cbk modified
+      setwd(paste(home.dir,dir.for.compil.of.tri.summ,"QTL_",cSI,"_imputed.ordered.tri.files.for.",gene.abbrev, sep=''))     #cbk modified
+    }  
+      
     if(pvals.to.output == "all.in.interval"){
       
       #Create list of peak markers for this trait
@@ -84,7 +106,7 @@ for(cSI in unique(tabular.summary[,12])){
       tabular.summary.this.cSI = tabular.summary[which(
           tabular.summary[,1] == trait &
           tabular.summary[,6] %in% all_JL.markers.this.trait & 
-          tabular.summary[,12] == cSI),]
+          tabular.summary[,column.of.cSI.in.tab.sum] == cSI),]
       
       #If no hit for this trait within this common S.I., go to next trait.
       if(length(unique(tabular.summary.this.cSI[,6]))==0){
@@ -99,7 +121,7 @@ for(cSI in unique(tabular.summary[,12])){
           FDR.pval.this.cSI_1trait = the.FDR.P.values[which(the.FDR.P.values[,ncol(the.FDR.P.values)] == JL.marker),]
           
           #Check common SI number to confirm still in correct interval
-          cSI.check = unique(tabular.summary[which(tabular.summary[,6]==JL.marker),12])
+          cSI.check = unique(tabular.summary[which(tabular.summary[,6]==JL.marker),column.of.cSI.in.tab.sum])
           if(!(cSI == cSI.check)){
             print(paste("Something went wrong for peak JL marker",JL.marker," for trait", trait,". Results being calculated outside of correct common support interval.",sep=''))
             }
@@ -119,7 +141,7 @@ for(cSI in unique(tabular.summary[,12])){
     } # end if("all.in.interval")
     
     #Extract RMIP common S.I. key rows corresponding to this trait-common S.I. combination
-    RMIP.SNPs.this.trait_cSI = RMIP.commonSI.key[which(RMIP.commonSI.key[,5]==trait & RMIP.commonSI.key[,6]==cSI),]
+    RMIP.SNPs.this.trait_cSI = RMIP.commonSI.key[which(RMIP.commonSI.key[,trait.col.common.key]==trait & RMIP.commonSI.key[,6]==cSI),]
     
     #Remove duplicate chr,pos pairs but also combine alleles so keep record of duplicate markers between HapMap v1 and v2
     #aggregate(allele ~ Chr+bp, data = RMIP.SNPs.this.trait_cSI, FUN = cat)
@@ -134,8 +156,8 @@ for(cSI in unique(tabular.summary[,12])){
         #Iterate through RMIP SNPs for this trait-SI pair
         for(RMIP.SNP in (1:nrow(RMIP.SNPs.this.trait_cSI))){
           #Determine RMIP SNP chr and pos from RMIP common S.I. key subset, columns 1 and 2
-          chr = RMIP.SNPs.this.trait_cSI[RMIP.SNP,1]
-          pos = RMIP.SNPs.this.trait_cSI[RMIP.SNP,2]
+          chr = RMIP.SNPs.this.trait_cSI[RMIP.SNP, chr.col.common.key]
+          pos = RMIP.SNPs.this.trait_cSI[RMIP.SNP, pos.col.common.key]
           
           #Identify search space for +/-{specified physical distance} region
           lower.search.bound <- as.numeric(pos - search.range)
@@ -189,8 +211,8 @@ for(cSI in unique(tabular.summary[,12])){
         #Iterate through RMIP SNPs for this trait-SI pair
         for(SNP.index in (1:nrow(RMIP.SNPs.this.trait_cSI))){
           #Determine RMIP SNP chr and pos from RMIP common S.I. key subset, columns 1 and 2
-          this.SNP.chr = RMIP.SNPs.this.trait_cSI[SNP.index,1]
-          this.SNP.pos = RMIP.SNPs.this.trait_cSI[SNP.index,2]
+          this.SNP.chr = RMIP.SNPs.this.trait_cSI[SNP.index,chr.col.common.key]
+          this.SNP.pos = RMIP.SNPs.this.trait_cSI[SNP.index,pos.col.common.key]
           
           #Extract proximal genes corresponding to this RMIP SNP
           proximal.genes.to.this.SNP = proximal.gene.data[which(

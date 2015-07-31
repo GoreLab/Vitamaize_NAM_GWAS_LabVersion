@@ -4,10 +4,63 @@
 
 rm(list = ls())
 
+
+GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod <-
+  function(PWI = PWI, FDR.Rate = 0.05, FDR.Procedure = "BH"){
+    #Object: Conduct the Benjamini-Hochberg FDR-Controlling Procedure
+    #Output: PWIP, number.of.significant.SNPs
+    #Authors: Alex Lipka and Zhiwu Zhang 
+    # Last update: May 5, 2011 
+    ##############################################################################################
+    #Make sure that your compouter has the latest version of Bioconductor (the "Biobase" package) and multtest
+    if(is.null(PWI)){
+      PWIP=NULL
+      number.of.significant.SNPs = 0
+    }
+    if(!is.null(PWI)){  
+      if(length(which(is.na(PWI)))>0){
+        print(str(PWI))
+        print(length(which(is.na(PWI))))
+        PWI[is.na(PWI)] = 1
+        #PWI[which(is.na(PWI))] = 1   #This line was in Alex's code but does not work for this data set (perhaps due to type)
+        print(PWI)
+      }
+      for(i in 1:ncol(PWI)){
+        #mt.rawp2adjp Performs the Simes procedure.  The output should be two columns, Left column: originial p-value
+        #Right column: Simes corrected p-value
+        res <- mt.rawp2adjp(as.vector(PWI[,i]), FDR.Procedure)
+        
+        #This command should order the p-values in the order of the SNPs in the data set
+        adjp <- res$adjp[order(res$index), ]
+        
+        #round(adjp[1:7,],4)
+        #Logical statment: 0, if Ho is not rejected; 1, if  Ho is rejected, by the Simes corrected p-value
+        #  temp <- mt.reject(adjp[,2], FDR.Rate)
+        
+        #Lists all number of SNPs that were rejected by the BY procedure
+        #temp$r
+    
+        #Attach the FDR adjusted p-values to AS_Results
+        if(i == 1){
+          PWIP <- adjp[,2]
+        }else{
+          PWIP <- cbind(PWIP, adjp[,2])
+        }
+        #Sort these data by lowest to highest FDR adjusted p-value
+        #PWIP <- PWIP[order(PWIP[,4]),]
+      } #end for(i in 1:ncol(PWI))
+    }
+    #return(list(PWIP=PWIP, number.of.significant.SNPs = number.of.significant.SNPs))
+    return(PWIP)
+  }#end GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod()
+
+
+#########################################################################################################################################################################################################
 ###Required Files:
 ### (1) Raw P values files from script (5-3)
 
 library(gplots)
+library(multtest)
 
 user = "chd"              #Options are "cbk" or "chd" (maintains file path differences to keep script easily adaptable)
 pvals.to.output = "search.range" #Options are 
@@ -43,6 +96,7 @@ if(user == 'chd'){
   trait.set = "tocos" #Options are "Carot" or "tocos"
   tabSummary.path = "/Tabular_Summaries/"
   location.of.GWAS.results = "/GWAS_Analysis/GWAS_25fam_HMPonly_TASSEL3_alpha01_2015_corr/"
+  fdr.adjusted.for.100kb.dir = correlation.output.dir
   
   #Read in the tabular summary; used below to obtain a list of trait names
   tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_recsuppregions_LODscores.txt", sep = ""), head = TRUE)
@@ -52,7 +106,7 @@ trait.list <- as.character(unique(tabular.summary[,1]))
 
 #CHD added 7/5: Key file so that output files can be labeled by common S.I. number.
 #Note CHD changed to use file with suffix dupSNPremoved in which duplicate SNPs across HapMap v.1 and 2 are consolidated (only allele column was different); otherwise proximal genes were being printed in duplicate
-RMIP.commonSI.key = read.table(paste(home.dir,tabSummary.path,"Complete_Results_allTraits_RMIPgt4_with_QTLnumber_dupSNPremoved.txt", sep = ""), head = TRUE)
+RMIP.commonSI.key = read.table(paste(home.dir,tabSummary.path,"Complete_Results_allTraits_RMIPgt4_with_QTLnumber.txt", sep = ""), head = TRUE)
 
 #For loop through each common S.I.(39 for carot, 48 for toco)
 for(cSI in unique(tabular.summary[,12])){
@@ -73,7 +127,7 @@ for(cSI in unique(tabular.summary[,12])){
     the.FDR.P.values =  read.table(paste("FDR.Adjusted.P.values.for.",trait,"_by_Q.txt",sep = ""), head = TRUE, stringsAsFactors = FALSE)
     
     #Change dir to master output dir for this common S.I.; final files from this script will be placed here.
-    setwd(paste(home.dir,dir.for.compil.of.tri.summ,"QTL_",cSI,"_imputed.ordered.tri.files/", sep=''))
+    setwd(paste(home.dir,dir.for.compil.of.tri.summ,"QTL_",cSI,"_tri.files_FPKM1_logtyes/", sep=''))
     
     if(pvals.to.output == "all.in.interval"){
       
@@ -131,6 +185,7 @@ for(cSI in unique(tabular.summary[,12])){
       if(pvals.to.output == "search.range"){ #end catch for no JL/GWAS overlap, start 100kb (or other specified physical distance) search
         print(paste("Now processing, for search.range, trait ",trait,sep=''))
         
+        count <- 0
         #Iterate through RMIP SNPs for this trait-SI pair
         for(RMIP.SNP in (1:nrow(RMIP.SNPs.this.trait_cSI))){
           #Determine RMIP SNP chr and pos from RMIP common S.I. key subset, columns 1 and 2
@@ -155,6 +210,36 @@ for(cSI in unique(tabular.summary[,12])){
         
           #Append these values to master file for this common S.I.
           fits.criteria.raw.master = rbind(fits.criteria.raw.master,fits.criteria.raw.this.SNP)
+          
+          print(paste("----------------And now, we are calculating the FDR-adjusted P-values BY 100kb for ", trait, "------------------------", sep = ""))
+          #Run the FDR correction
+          #if no genes within 100kb skip this SNP so that GAPIT.BH will not hit error
+          if(nrow(fits.criteria.raw.this.SNP)==0){
+            print(paste("No genes within 100kb of SNP ",RMIP.SNP, "thus no FDR p-values calculated.",sep=''))
+            next
+          #if only 1 row in the p-val matrix (due to only 1 gene in search space), capture values 'as is' (i.e. raw) so that GAPIT.BH will not hit error
+          }else if(nrow(fits.criteria.raw.this.SNP)==1){
+              FDR.by100kb.Adjusted.P.values = fits.criteria.raw.this.SNP[,2:9]
+              print(paste("No adjustment made for p-values based on 100kb FDR because only 1 gene within 100kb, thus no multiple testing."))
+          }else{
+            FDR.by100kb.Adjusted.P.values <- GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod(PWI = fits.criteria.raw.this.SNP[,2:9])
+          }
+          
+            FDR.by100kb.P.value.results <- cbind(fits.criteria.raw.this.SNP[,1], FDR.by100kb.Adjusted.P.values, 
+                                               fits.criteria.raw.this.SNP[,10:14])
+            colnames(FDR.by100kb.P.value.results)[1:14] <- colnames(fits.criteria.raw.this.SNP)[1:14]
+
+            #Add trait column identifier
+            FDR.by100kb.P.value.results = cbind(FDR.by100kb.P.value.results,rep(trait,nrow(FDR.by100kb.P.value.results)))
+            colnames(FDR.by100kb.P.value.results)[ncol(FDR.by100kb.P.value.results)] = "trait"
+
+          #Append the support interval-wise FDR corrected P-values
+          if(count == 0){
+            FDR.adjusted.P.values.all.SNPs.this.QTL <- FDR.by100kb.P.value.results
+          }else{
+            FDR.adjusted.P.values.all.SNPs.this.QTL <- rbind(FDR.adjusted.P.values.all.SNPs.this.QTL,FDR.by100kb.P.value.results) 
+          }
+          count <- count + 1
           
           #####If want to use FDR p-values rather than raw:
           #Identify genes within the search space - FDR
@@ -223,6 +308,10 @@ for(cSI in unique(tabular.summary[,12])){
     write.table(fits.criteria.raw.master, paste("Raw.P_Genes.", search.range,"bp.of.GWAS.SNPs_QTL",cSI,".txt", sep = ""), sep = "\t", quote = FALSE,row.names=FALSE)
     #FDR.search.range.sorted = fits.criteria.FDR.master[order("trait","Chr","Start_bp"),]
     #write.table(fits.criteria.FDR.master, paste("FDR.P_Genes.", search.range,"bp.of.GWAS.SNPs_QTL",cSI,".txt", sep = ""), sep = "\t", quote = FALSE)  
+    
+    #Export the FDR-adjusted P-values, adjusted separately for each gene for the search space of its respective RMIP SNP
+    write.table(FDR.adjusted.P.values.all.SNPs.this.QTL, paste(home.dir, fdr.adjusted.for.100kb.dir,"FDR.Adjusted.P.values_by_100kb_QTL",cSI,".txt", sep = ""), 
+                quote = FALSE, sep = "\t", row.names = FALSE,col.names = TRUE)
     }#end if is not null
     }# end search.range
   if(pvals.to.output == "1gene"){

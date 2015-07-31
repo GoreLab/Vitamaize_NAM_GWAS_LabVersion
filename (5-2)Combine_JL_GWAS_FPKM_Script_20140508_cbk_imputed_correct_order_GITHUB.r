@@ -123,8 +123,6 @@ correlate.FPKMs.with.GWAS.SNPs.and.JL.Effect.Estims = function(numeric.GWAS.SNPs
   }#End for(i in list.of.gene.GRZMs.in.support.interval)
   
   colnames(final.output.table) <- c("Gene_in_SI_x_FPKM_Sample", paste("Chr_",numeric.GWAS.SNPs.data.temp.with.Head[,3],"_Pos_",numeric.GWAS.SNPs.data.temp.with.Head[,4],sep = ""))
-=======
-  colnames(final.output.table) <- c("Gene_in_SI_x_FPKM_Sample", paste("Chr_",GWAS.SNPs.on.Chr$GD[,3],"_Pos_",GWAS.SNPs.on.Chr$GD[,4],sep = ""))
   write.table(final.output.table, paste(output.folder, "Pearson_Between_FPKM_JL_GWAS_",trait, "_",QTL,"_IMPUTED_2015.txt", sep = ""),
             quote = FALSE, sep = "\t", row.names = FALSE,col.names = TRUE)
   #finished calculating correlation between GWAS SNPs and JL effect estims
@@ -191,14 +189,6 @@ correlate.FPKMs.with.GWAS.SNPs.and.JL.Effect.Estims = function(numeric.GWAS.SNPs
 
 trait.set = "tocos" #Options are "Carot" or "tocos"
 
-=======
-
-###################################################End of functions section; start of main code###################################################################
-##################################################################################################################################################################
-##################################################################################################################################################################
-
-trait.set = "Carot" #Options are "Carot" or "tocos"
-
 #Set the working directory
 if(trait.set == "Carot"){
   setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
@@ -215,9 +205,7 @@ if(trait.set == "Carot"){
   expression.dir <- "\\(15)Correlated Expression\\Results_from_R_FPKM1_logtyes\\"
   numb.common.SI = 39
   max.numb.traits.per.SI = 8
-
   tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_GWAS_FamPVE_common_SI_recsuppregions_LODscores_20150612.txt", sep = ""), head = TRUE)
-
 }
 
 if(trait.set == "tocos"){
@@ -235,7 +223,6 @@ if(trait.set == "tocos"){
   max.numb.traits.per.SI = 9
   
   tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_recsuppregions_LODscores.txt", sep = ""), head = TRUE)
-=======
 }
 
 #Source in the modified GAPIT files
@@ -248,12 +235,6 @@ setwd(home.dir)
 #Read in the appropriate files
 
 absolute.final.data.set.FPKM <- read.table(paste(home.dir,FPKM.file.dir,"FPKM.table.by.gene.ann.complete.matrix.FPKMthreshold.1_filter.by.kernel_across_all.samples.log2trans.txt", sep = ""), head = TRUE)
-
-=======
-#tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_recsuppregions_LODscores.txt", sep = ""), head = TRUE)
-tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_GWAS_FamPVE_common_SI_recsuppregions_LODscores_20150612.txt", sep = ""), head = TRUE)
-absolute.final.data.set.FPKM <- read.table(paste(home.dir,FPKM.file.dir,"FPKM.table.by.gene.ann.complete.matrix.FPKMthreshold.1_filter.by.kernel_across_all.samples.log2trans.txt", sep = ""), head = TRUE)
-
 
 ###generate list of QTL numbers and common support intervals for GMMS4 script
 all.JL.QTL.SI <- read.table(paste(home.dir,expression.dir,"Common_SI_array_for_tri_auto_June_2015.txt",sep=''), head=TRUE)
@@ -275,12 +256,7 @@ for (q in 1:numb.common.SI){
   dir.create(paste(home.dir,dir.for.5.2.ordered,"QTL_",common.SI,"_tri.files_FPKM1_logtyes/", sep=''),showWarnings=FALSE)
   output.folder <- paste(home.dir,dir.for.5.2.ordered,"QTL_",common.SI,"_tri.files_FPKM1_logtyes/", sep='')
   }
-
-  dir.create(paste(home.dir,dir.for.5.2.ordered,"QTL_",common.SI,"_imputed.ordered.tri.files.for.",gene, sep=""),showWarnings=FALSE)
-  output.folder <- (paste(home.dir,dir.for.5.2.ordered,"QTL_",common.SI,"_imputed.ordered.tri.files.for.",gene, "\\", sep=""))
-  #dir.create(paste(home.dir,dir.for.5.2.ordered,"QTL_",common.SI,"_tri.files_FPKM1_logtyes/", sep=''),showWarnings=FALSE)
-  #output.folder <- paste(home.dir,dir.for.5.2.ordered,"QTL_",common.SI,"_tri.files_FPKM1_logtyes/", sep='')
-
+  
   ### regenerate loop for trait list
   trait.list <- NULL
   for (m in 6:(5+max.numb.traits.per.SI)){    #columns with significant traits
@@ -413,15 +389,6 @@ for (q in 1:numb.common.SI){
       
       numeric.GWAS.SNPs.data.temp <- t(numeric.GWAS.SNPs.data.temp.with.Head[,-c(1:11)])
       colnames(numeric.GWAS.SNPs.data.temp) <- t(numeric.GWAS.SNPs.data.temp.with.Head[,1])
-      final.labels.for.output.table <- paste("Chr_",GWAS.SNPs.on.Chr$GD[,3],"_",GWAS.SNPs.on.Chr$GD[,4], "_bp", sep = "")
-      setwd(home.dir)
-   
-      #Carry out all three correlation functions for triangulation; if all FPKMs are 0 tryCatch loops will ensure correlation is NA (implemented by CHD 20150717)
-      final.output.table = correlate.GWAS.SNPs.with.JL.Effect.Estims(numeric.GWAS.SNPs.data.temp = numeric.GWAS.SNPs.data.temp, transformed.effect.estimates.from.QTL = transformed.effect.estimates.from.QTL)
-      correlate.FPKMs.with.GWAS.SNPs.and.JL.Effect.Estims(numeric.GWAS.SNPs.data.temp = numeric.GWAS.SNPs.data.temp,transformed.effect.estimates.from.QTL = transformed.effect.estimates.from.QTL,final.output.table=final.output.table)
-   
-      numeric.GWAS.SNPs.data.temp <- as.data.frame(t(GWAS.SNPs.on.Chr$GD[-c(1:11)]))
-      colnames(numeric.GWAS.SNPs.data.temp) <- GWAS.SNPs.on.Chr$GD[,1]
       final.labels.for.output.table <- paste("Chr_",GWAS.SNPs.on.Chr$GD[,3],"_",GWAS.SNPs.on.Chr$GD[,4], "_bp", sep = "")
       setwd(home.dir)
    

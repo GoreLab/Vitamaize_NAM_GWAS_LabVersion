@@ -29,8 +29,8 @@ pheno.dir <- "/Phenotypes/"
 #resid.dir <-"\\(27) Epistasis\\Y1_residuals\\"
 dir.for.modified.JL.results <- "/R.JL.no.MultiColl/Toco_FinalModels_postMCCorrPostRescan-whenApplicable/"
 pairwise.epistasis.results.dir <- pheno.dir
-permut.dir <- pheno.dir
-final.combined.model.fit.and.PVE.dir <- pheno.dir
+permut.dir <- "/Epistasis/"
+final.combined.model.fit.and.PVE.dir <- permut.dir
 PVE.byFamily = TRUE
 
 library(multtest)
@@ -50,7 +50,7 @@ trait.collinear <- c("aT3","dT3","gT3","totalT3","totalTocochrs")
 
 #Specify types of analyses to be run; set those desired to TRUE
 generate.model = TRUE                          #Generate complete model with all additive and possible epistatic terms except those including major gene
-generate.permutations = TRUE                  #Requires generate.model to be true; randomize residuals by family across NAM; generate designated number of permutations; identify thresholds with desired typeI error rate
+generate.permutations = FALSE                  #Requires generate.model to be true; randomize residuals by family across NAM; generate designated number of permutations; identify thresholds with desired typeI error rate
                                                 ###NOTE REmove comment from bracket in line 206 to generate permutations and loop around traits
 test.epi.interactions.in.final.model = TRUE   #Requires generate.model to be true; Obtain pval for all interaction terms when tested singly in additive model (minus major gene); apply threshold and calculate PVE of final model terms
 test.stepwise.regression.model = FALSE         #Requires generate.model to be true; identify optimal model from all terms (minus major gene) using AIC model selction criterion
@@ -287,7 +287,7 @@ if(generate.model == TRUE){
   colnames(results)[1] <- "Term(NOTE:A_separate_model_was_fitted_for_each_two-way_interaction_term)"
   colnames(results)[7] <- "FDR.adj.pval"
   
-  write.table(results, paste(home.dir, pairwise.epistasis.results.dir,"Two.way.epistasis.models.for.",i,".NAM.txt",sep=""), sep = "\t", row.names = FALSE, quote = FALSE)
+  #write.table(results, paste(home.dir, pairwise.epistasis.results.dir,"Two.way.epistasis.models.for.",i,".NAM.txt",sep=""), sep = "\t", row.names = FALSE, quote = FALSE)
  
     #identify interaction terms from single term testing above that pass the specified threshold and refit final model
     #call in threshold table, specify by trait i and error rate (above)
@@ -344,6 +344,8 @@ if(generate.model == TRUE){
 
   term.vector <- NULL
   PVE.vector <- NULL
+  
+  pop.Effect_allInteraxns = NULL
   
     #Obtain marker effect estimates for additive terms
      for(r in all.terms.no.pop){
@@ -411,6 +413,8 @@ if(generate.model == TRUE){
       }
       
       pop.Effect = cbind(substr(rownames(marker.effects), start=4, stop=5),marker.effects[,1])
+      pop.Effect_allInteraxns = rbind(pop.Effect_allInteraxns,pop.Effect)
+      
       for (this.pop in pop.match[,1]){
         #print(this.pop)
         Effect = as.numeric(pop.Effect[which(pop.Effect[,1]==this.pop),2])
@@ -437,10 +441,12 @@ if(generate.model == TRUE){
 
   print("4")
   
+  write.table(pop.Effect_allInteraxns,paste(home.dir,final.combined.model.fit.and.PVE.dir,"Allelic_Effect_Estimates/Pop.by.Marker_Effect.Estims_Epist_FinalJLModel_",i,".txt",sep=''),sep="\t")
+  
   PVE.matrix <- cbind(term.vector, PVE.vector)
   output <- merge(ANOVA.entire.model, PVE.matrix, by.x = "row.names", by.y = "term.vector")
 
-   write.table(output, paste(home.dir, final.combined.model.fit.and.PVE.dir,"Add.and_epi.JL.model.plus.PVE.at.alpha.",select.type1.error.rate,"for.",i,".NAM_chd_PVEbyFam.txt",sep=""), sep = "\t", row.names = FALSE, quote = FALSE)
+   #write.table(output, paste(home.dir, final.combined.model.fit.and.PVE.dir,"Add.and_epi.JL.model.plus.PVE.at.alpha.",select.type1.error.rate,"for.",i,".NAM_chd_PVEbyFam.txt",sep=""), sep = "\t", row.names = FALSE, quote = FALSE)
   
   #} #end i traits
   } # end test.epi.interactions.in.final.model

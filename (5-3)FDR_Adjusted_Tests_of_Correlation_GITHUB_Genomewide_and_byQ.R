@@ -1,13 +1,10 @@
 rm(list = ls())
 
-
 ###Required Files:
-### (1) FPKM matrix with log2 transformed data, organized by founder, named FPKM.table.by.gene.annotation.complete.founder.matrix.txt
-### (2) GAPIT source files
-### (3) Tabular summary file
-### (4) TRANSFORMED effect estimate files, from script (2-2)
-### (5) Raw P values files from script (5-3)
-
+### (1) FPKM matrix with log2 transformed data, organized by founder, named FPKM.table.by.gene.annotation.complete.founder.matrix.txt                        
+### (2) GAPIT source files                                   
+### (3) Tabular summary file                                
+### (4) TRANSFORMED effect estimate files, from script (2-2)   
 
 
 ##########################################################################
@@ -19,22 +16,9 @@ get.me.my.FPKM.values <- function(absolute.final.data.set.FPKM = NA, gene.ID = N
   #length for each entry = 221, data starts at [,6]
   FPKM.vector <- row.of.interest[,6:ncol(row.of.interest)]
   
-  #write.table(FPKM.vector, "C:\\Users\\ceb19\\Desktop\\FPKM.vector.txt", sep = "\t", row.names = FALSE, col.names = FALSE) 
-  #FPKM.vector.tidy <- read.table("C:\\Users\\ceb19\\Desktop\\FPKM.vector.txt", sep = "", col.names = FALSE)
-  
-  
-  #colnames(FPKM.vector) <- NULL
-  #rownames(FPKM.vector) <- NULL
-  
-  #founder.names <- as.matrix(c("B73", "B97", "CML103", "CML228", "CML247", "CML277", "CML322", "CML333", "CML52", 
-  #                                 "CML69", "Hp301", "Il14H", "Ki11", "Ki3", "Ky21", "M162W", "M37W", "Mo17", "Mo18W", 
-  #                                 "MS71", "NC350", "NC358", "Oh43", "Oh7B", "P39", "Tx303", "Tzi8"))
-  
   founder.names <- as.matrix(c("B73", "B97", "CML103", "CML228", "CML247", "CML277", "CML322", "CML333", "CML52", 
                                "CML69", "HP301", "IL14H", "KI11", "KI3", "KY21", "M162W", "M37W", "MO17", "MO18W", 
                                "MS71", "NC350", "NC358", "OH43", "OH7B", "P39", "TX303", "TZI8"))
-  
-  
   
   as.matrix(FPKM.vector) -> FPKM.vector
   FPKM.matrix <- NULL
@@ -63,41 +47,27 @@ get.me.my.FPKM.values <- function(absolute.final.data.set.FPKM = NA, gene.ID = N
   return(FPKM.matrix)
 }# end get.me.my.FPKM.values
 
-
 #########################################################################
-correlate.it.dude <- function(bt.effect.estimates.from.QTL =NULL, tabular.summary = tabular.summary, Gene.GRZM.ID = NA,  absolute.final.data.set.FPKM = absolute.final.data.set.FPKM, trait = trait, QTL=QTL){
+correlate.it.dude <- function(transformed.effect.estimates.from.QTL =NULL, tabular.summary = tabular.summary, absolute.final.data.set.FPKM = absolute.final.data.set.FPKM, trait = trait, QTL=QTL){
   #Obtain chromosome, start and stop support interval positions, from the "tabular summary"
   row.of.interest <- which((tabular.summary[,1] == trait)  & (tabular.summary[,6] == QTL))
   chr <- tabular.summary[row.of.interest, 2]
   QTL.start.bp <- tabular.summary[row.of.interest, 4]
   QTL.stop.bp <- tabular.summary[row.of.interest, 5]
-    
-  
+   
   #Obtain a vector of all of the GRZM ids of the genes within the interval
   condition.1 <- absolute.final.data.set.FPKM[,3] == paste("chr", chr,sep = "")
   condition.2 <- absolute.final.data.set.FPKM[,4] >= QTL.start.bp
   condition.3 <- absolute.final.data.set.FPKM[,5] <= QTL.stop.bp
-  
   
   list.of.gene.GRZMs.in.support.interval <- as.character(absolute.final.data.set.FPKM[which(condition.1 & condition.2 & condition.3),1])
   list.of.gene.names <- as.character(absolute.final.data.set.FPKM[which(condition.1 & condition.2 & condition.3),2])
   list.of.chr <- as.character(absolute.final.data.set.FPKM[which(condition.1 & condition.2 & condition.3),3])
   list.of.bp.start <- absolute.final.data.set.FPKM[which(condition.1 & condition.2 & condition.3),4]
   list.of.bp.stop <- absolute.final.data.set.FPKM[which(condition.1 & condition.2 & condition.3),5]
-  
-  #If there is an a priori list in Gene.GRZM.ID, sort these on top
-  if(!is.na(Gene.GRZM.ID)){
-    sorting.vector <- rep(1,length(list.of.gene.GRZMs.in.support.interval))
-    sorting.vector[which(list.of.gene.GRZMs.in.support.interval %in% Gene.GRZM.ID)] = 0
-    list.of.gene.GRZMs.in.support.interval <- list.of.gene.GRZMs.in.support.interval[order(sorting.vector)]
-    list.of.gene.names <- list.of.gene.names[order(sorting.vector)]
-  }#if(length(Gene.GRZM.ID) > 0) 
    
-  
-  
-  print("-------------------------Correlating each FPKM values with alleic effect estimates--------------------------------------------------------------")
-  #Correlate the FPKM values with the allelic effect estimates. The output file will have the genes in the rows, and the time points
-  # in the columns
+  print("-------------------------Correlating each FPKM values with allelic effect estimates--------------------------------------------------------------")
+  #Correlate the FPKM values with the allelic effect estimates. The output file will have the genes in the rows, and the time points in the columns
   
   count <- 0
   for(i in list.of.gene.GRZMs.in.support.interval){
@@ -105,35 +75,44 @@ correlate.it.dude <- function(bt.effect.estimates.from.QTL =NULL, tabular.summar
     the.FPKM.values <- get.me.my.FPKM.values(absolute.final.data.set.FPKM = absolute.final.data.set.FPKM, 
                                              gene.ID = i, gene.name = list.of.gene.names[which(list.of.gene.GRZMs.in.support.interval == i)], 
                                              print.out.results = FALSE, output.dir = output.dir, home.dir = home.dir)
-    
-    temp.result.vector <- i                                       
+    temp.result.vector.Spearman <- i   
+    temp.result.vector.Pearson <- i                               
     for(j in 1:ncol(the.FPKM.values)){
       #get the jth column of the.FPKM.values
       this.FPKM <- data.frame(cbind(rownames(the.FPKM.values), the.FPKM.values[,j]))
       
       #merge it with the allelic effect estimates
-      JL.effects.and.this.FPKM <- merge(bt.effect.estimates.from.QTL, this.FPKM, by.x = "Pop.Founders", by.y = "X1")
+      JL.effects.and.this.FPKM <- merge(transformed.effect.estimates.from.QTL, this.FPKM, by.x = "Pop.Founders", by.y = "X1")
       
-      #calculate Spearman's rank correlation coefficient
-      Correl.Spearman <- cor(as.numeric(as.character(JL.effects.and.this.FPKM[,3])), as.numeric(as.character(JL.effects.and.this.FPKM[,4])), 
-                             use = "pairwise.complete.obs", method = "spearman")    
+      #calculate Spearman and Pearson - NOTE: USING PEARSON IN FINAL OUTPUT
+      Correl.Spearman <- suppressWarnings(cor(as.numeric(as.character(JL.effects.and.this.FPKM[,3])), as.numeric(as.character(JL.effects.and.this.FPKM[,4])), 
+                                              use = "pairwise.complete.obs", method = "spearman"))
+      tryCatch({
+        Correl.Pearson <- cor(as.numeric(as.character(JL.effects.and.this.FPKM[,3])), as.numeric(as.character(JL.effects.and.this.FPKM[,4])), 
+            use = "pairwise.complete.obs", method = "pearson") 
+      }, warning = function(w) {
+        Correl.Pearson <- NA
+        these.effects = as.vector(JL.effects.and.this.FPKM[,3])
+        these.FPKMs = as.vector(JL.effects.and.this.FPKM[,4])
+        print(paste(QTL,trait,i,", time point in col",j,sep=" "))
+        print(paste(c("Produced NA for FPKM/JL SNP allelic effect correlation because stdev was 0. FPKM vector ",these.FPKMs," Effect vector ",these.effects),collapse=','))
+        }
+      )
       
-      #append it to a vector of results
-      temp.result.vector <- c(temp.result.vector, Correl.Spearman)
-      
+      #append to results vector
+      temp.result.vector.Spearman <- c(temp.result.vector.Spearman, Correl.Spearman)
+      temp.result.vector.Pearson <- c(temp.result.vector.Pearson, Correl.Pearson)
+     
     }#end for(j in 1:ncol(the.FPKM.values))
-    
-    
-    #bt.effect.estimates.from.QTL
+    #transformed.effect.estimates.from.QTL
     count <- count+1
     
     #Append results to the final.output.FPKM.QTL.effect.table 
     if(count == 1){
-      final.output.FPKM.QTL.effect.table <- temp.result.vector
+      final.output.FPKM.QTL.effect.table <- temp.result.vector.Pearson
     }else{
-      final.output.FPKM.QTL.effect.table <- rbind(final.output.FPKM.QTL.effect.table, temp.result.vector)
+      final.output.FPKM.QTL.effect.table <- rbind(final.output.FPKM.QTL.effect.table, temp.result.vector.Pearson)
     }#end if(count == 1)
-    
   }#end for(i in list.of.gene.GRZMs.in.support.interval) 
   
   #Put the column names on final.output.FPKM.QTL.effect.table
@@ -142,26 +121,26 @@ correlate.it.dude <- function(bt.effect.estimates.from.QTL =NULL, tabular.summar
   #Merge the the information about chromosome and bp position to "final.output.FPKM.QTL.effect.table"
   final.output.FPKM.QTL.effect.table <- as.data.frame(final.output.FPKM.QTL.effect.table)
   data.frame.with.chr.pos <- as.data.frame(cbind(list.of.gene.GRZMs.in.support.interval, list.of.gene.names, list.of.chr, list.of.bp.start, list.of.bp.stop, rep(QTL, length(list.of.bp.start))) ) 
-  colnames(data.frame.with.chr.pos) <- c("GRMZM_ID", "Gene_Name", "Chr", "Start_bp", "Stop_bp", "JL_QTL")
+  colnames(data.frame.with.chr.pos) <- c("GRZM_ID", "Gene_Name", "Chr", "Start_bp", "Stop_bp", "JL_QTL")
   
-  final.output.FPKM.QTL.effect.table <- merge(final.output.FPKM.QTL.effect.table, data.frame.with.chr.pos, by.x = "GRZM_ID", by.y = "GRMZM_ID")
+  final.output.FPKM.QTL.effect.table <- merge(final.output.FPKM.QTL.effect.table, data.frame.with.chr.pos, by.x = "GRZM_ID", by.y = "GRZM_ID")
 
   #Sort this table in genomic order
-  final.output.FPKM.QTL.effect.table <- final.output.FPKM.QTL.effect.table[order(final.output.FPKM.QTL.effect.table[,12]),]  
+  final.output.FPKM.QTL.effect.table <- final.output.FPKM.QTL.effect.table[order(final.output.FPKM.QTL.effect.table[,12]),] 
   
   return(final.output.FPKM.QTL.effect.table)
 } #end correlate.it.dude()
 
-
 #####Obtain the P-value for testing H0:rho = 0
-obtain.P.value <- function(correl = NA){
-  dfr <- 20 # = 22 - 2 (Number of observations with "good" FPKM measurements minus 2; we loose two d.f.; one for estimating the mean of each variable)
+obtain.P.value <- function(correl = NA,i=NULL){
+  #dfr <- 20 # = 22 - 2 (Number of observations with "good" FPKM measurements minus 2; we loose two d.f.; one for estimating the mean of each variable)
+  dfr = nfam_perTimePt[i-1] #subtract 1 because first time point has i index of 2
+  print(paste("dfr actually passed to function is ",dfr,sep=""))
   r2 <- correl^2
   Fstat <- r2 * dfr / (1 - r2)
   P.val <- 1 - pf(Fstat, 1, dfr) 
   return(P.val)
 }#end obtain.P.value()
-
 
 GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod <-
   function(PWI = PWI, FDR.Rate = 0.05, FDR.Procedure = "BH"){
@@ -170,10 +149,7 @@ GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod <-
     #Authors: Alex Lipka and Zhiwu Zhang 
     # Last update: May 5, 2011 
     ##############################################################################################
-    
-    
     #Make sure that your compouter has the latest version of Bioconductor (the "Biobase" package) and multtest
-    
     if(is.null(PWI))
     {
       PWIP=NULL
@@ -183,13 +159,9 @@ GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod <-
     if(!is.null(PWI))
     {  
       if(length(which(is.na(PWI)))>0){
-        for(i in 1:ncol(PWI)){
-          PWI[which(is.na(PWI[,i])),i]= 1
-        }#end for(i in 1:ncol(PWI))
+        PWI[which(is.na(PWI))] = 1
       }
-      
-      #library(multtest)
-      
+
     for(i in 1:ncol(PWI))
     {
       #mt.rawp2adjp Performs the Simes procedure.  The output should be two columns, Left column: originial p-value
@@ -224,7 +196,6 @@ GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod <-
     
   }#end GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod()
 
-
 get.me.my.results <- function(tabular.summary = tabular.summary, absolute.final.data.set.FPKM, trait = trait){ 
   
   the.QTL.for.the.trait <- as.vector(as.character(tabular.summary[which(as.character(tabular.summary[,1]) == trait),6]))
@@ -235,8 +206,8 @@ get.me.my.results <- function(tabular.summary = tabular.summary, absolute.final.
     #Gene <- NA
     #Gene.GRZM.ID <- NA
     print(paste("QTL = ", QTL,sep = ""))
-    bt.effect.estimates.from.QTL <- the.extractinator(tabular.summary = tabular.summary, QTL = QTL, Gene =Gene, Gene.GRZM.ID = NA, trait = trait)
-    results.summaries.QTL.under.study <- correlate.it.dude(bt.effect.estimates.from.QTL = bt.effect.estimates.from.QTL, QTL=QTL,
+    transformed.effect.estimates.from.QTL <- the.extractinator(tabular.summary = tabular.summary, QTL = QTL, Gene =Gene, Gene.GRZM.ID = Gene.GRZM.ID, trait = trait)
+    results.summaries.QTL.under.study <- correlate.it.dude(transformed.effect.estimates.from.QTL = transformed.effect.estimates.from.QTL, QTL=QTL,
                                                            tabular.summary = tabular.summary, absolute.final.data.set.FPKM = absolute.final.data.set.FPKM, trait = trait)
     the.correlation.results <- rbind(the.correlation.results, results.summaries.QTL.under.study)
     print(dim(the.correlation.results))
@@ -246,7 +217,7 @@ get.me.my.results <- function(tabular.summary = tabular.summary, absolute.final.
   #Obtain the P-values for testing H0:rho = 0 
   for(i in 2:9){
     temp.vector <- as.numeric(as.vector(the.correlation.results[,i]))
-    vector.of.P.values <- unlist(lapply(temp.vector, obtain.P.value))
+    vector.of.P.values <- unlist(lapply(temp.vector, obtain.P.value,i=i))
     if(i == 2){
       matrix.of.P.values <- vector.of.P.values
     }else{
@@ -260,7 +231,7 @@ get.me.my.results <- function(tabular.summary = tabular.summary, absolute.final.
   #Obtain the FDR-adjusted P-values
   the.FDR.Adjusted.P.values <- GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod(PWI = matrix.of.P.values)
   
-  print(paste("----------------And now, we are calcualting the FDR-adjusted P-values for ", trait, "------------------------", sep = ""))
+  print(paste("----------------And now, we are calculating the FDR-adjusted P-values for ", trait, "------------------------", sep = ""))
   
   the.FDR.adj.P.value.results <- cbind(the.correlation.results[,1], the.FDR.Adjusted.P.values, the.correlation.results[,10:14])
   colnames(the.FDR.adj.P.value.results)[2:9] <- colnames(the.correlation.results)[2:9]
@@ -273,7 +244,7 @@ get.me.my.results <- function(tabular.summary = tabular.summary, absolute.final.
 }#end get.me.my.results() 
 
 
-
+###!NOTE: The "get me my SNPs" output file HAS to be labeled as follows, e.g. "Output_GWAS_Results_AT_lt_0.05_Chr_5.txt"
 the.extractinator <- function(tabular.summary = tabular.summary, QTL = QTL, Gene = NA, Gene.GRZM.ID = NA, trait = trait){
   #Function 1 should begin here
   
@@ -290,31 +261,39 @@ the.extractinator <- function(tabular.summary = tabular.summary, QTL = QTL, Gene
                                        "pop14", "pop15", "pop16", "pop18", "pop19", 
                                        "pop20", "pop21", "pop22", "pop23", "pop24", 
                                        "pop25", "pop26")))
+  #7/21/2015 CHD changed Il14H to IL14H to match nomenclature above
   founder.names <- as.data.frame(c("B97", "CML103", "CML228", "CML247", "CML277", "CML322", "CML333", "CML52", 
-                                   "CML69", "HP301", "Il14H", "KI11", "KI3", "KY21", "M162W", "M37W", "MO18W", 
+                                   "CML69", "HP301", "IL14H", "KI11", "KI3", "KY21", "M162W", "M37W", "MO18W", 
                                    "MS71", "NC350", "NC358", "OH43", "OH7B", "P39", "TX303", "TZI8"))
   NAM.pops <- cbind(pop.seq, founder.names)
   colnames(NAM.pops) <- c("Pop.num", "Pop.Founders")
   
   #Obtain the populationxmarker effect estimates for this QTL
+  if(trait.set == "Carot"){
   effect.estimates.from.entire.trait <- read.table(paste(home.dir,location.of.effect.estimates,
-                                                         "Pop.by.Marker.Effect.Estimates.from.R.",trait,".SI01_2015.txt", sep = ""),head = TRUE)
+                                                         "Pop.by.Marker.Effect.Estimates.from.R.",trait,".SI01_2015.txt", sep = ""),head = TRUE)  
+  }  
+  if(trait.set == "tocos"){
+  effect.estimates.from.entire.trait <- read.table(paste(home.dir,location.of.effect.estimates,
+                                                         "Pop.by.Marker.Effect.Estimates.from.R.",trait,".SI01.txt", sep = ""),head = TRUE)   
+  }
   
   markerID <-  substr(effect.estimates.from.entire.trait[,1], 7,10000)
   popID <- substr(effect.estimates.from.entire.trait[,1], 1,5)
   
-  #######
-  #bt.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
-                                            #as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), ncol(effect.estimates.from.entire.trait)])
   
+  #transformed.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
+  #                                          as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), ncol(effect.estimates.from.entire.trait)])
+  #)
   
   transformed.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
-                                            as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), 2])
-  )
+                                as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), 2])
+                                )
+  
   colnames(transformed.effect.estimates.from.QTL) <- c("Population","Trans.Est")
   
   transformed.effect.estimates.from.QTL <- merge(transformed.effect.estimates.from.QTL, NAM.pops, by.x = "Population", by.y = "Pop.num")
-  
+
   return(transformed.effect.estimates.from.QTL)
 }#end the.extractinator 
 
@@ -323,21 +302,41 @@ the.extractinator <- function(tabular.summary = tabular.summary, QTL = QTL, Gene
 ##########################################################################
 ##########################################################################
 
-###
+
 library(multtest)
-#Set the working directory
-setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
-home.dir <- getwd()
-location.of.modified.GAPIT.files <- "\\(21) GAPIT source files\\"
-location.of.effect.estimates <- "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Effect_estimates_TASSEL3_alpha01_2015\\"
-location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV GWAS 25fam_alldata_alpha01_2015_FINAL\\"
-output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Significance Threshold\\FDR_Test_Ancillary_Output_Files\\"
-get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Results_from_GMMS4_imputed_matrix_T3_2015\\" 
-FPKM.file.dir <- "\\(15)Correlated Expression\\"
-correlation.output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Significance Threshold\\FDR_Corrected_Corr_Results\\"
-fdr.adjusted.for.each.SI.dir <- correlation.output.dir
+trait.set = "tocos" #Options are "Carot" or "tocos"
+FDR_corr = "by_QTL" #Options are "genomewide" or "by_QTL"
 
+if(trait.set == "Carot"){
+  setwd("C:\\Users\\ceb19\\Documents\\Gore Lab\\Carotenoid NAM Merged Env")
+  home.dir <- getwd()
+  location.of.modified.GAPIT.files <- "\\(21) GAPIT source files\\"
+  location.of.effect.estimates <- "\\(9)JL Analysis\\Permutations\\Data_for_alpha01_new_TASSEL3\\Effect_estimates_TASSEL3_alpha01_2015\\"
+  location.of.GWAS.results <- "\\(10)GWAS Analysis\\RUV GWAS 25fam_alldata_alpha01_2015_FINAL\\"
+  output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Significance Threshold\\FDR_Test_Ancillary_Output_Files\\"
+  get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Results_from_GMMS4_imputed_matrix_T3_2015\\" 
+  FPKM.file.dir <- "\\(15)Correlated Expression\\"
+  correlation.output.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015\\Significance Threshold\\FDR_Corrected_Corr_Results\\"
+  tabSummary.path = "\\(31) Tabular Summary Info for 2015 analysis\\LOD scores\\"
+}
 
+if(trait.set == "tocos"){
+  setwd("C:/Users/chd45/Documents/Projects/NAM_GWAS/CHD_Tassel3fromSF_modified0.01/")
+  home.dir <- getwd()
+  tabSummary.path = "/Tabular_Summaries/"
+  location.of.modified.GAPIT.files <- "/Expression_Analyses/inputsFor5-2/"
+  location.of.effect.estimates <- "/Allelic_Effect_Estimates.no.MultiColl/"
+  location.of.GWAS.results <- "/GWAS_Analysis/GWAS_25fam_HMPonly_TASSEL3_alpha01_2015_corr/"
+  dir.for.5.2.ordered <- "/Expression_Analyses/GMMS3.1Results_tocos/orderedFrom5.2/"
+  dir.for.5.1.matrices <- "/Expression_Analyses/GMMS3.1Results_tocos/ImputedMatricesfrom5.1/"
+  FPKM.file.dir <- location.of.modified.GAPIT.files
+  FPKM.output.dir = "/Expression_Analyses/GMMS3.1Results_tocos/FPKMmatricesFrom5.3/"
+  correlation.output.dir <- "/Expression_Analyses/GMMS3.1Results_tocos/corrsFrom5.3/"
+  fdr.adjusted.for.each.SI.dir <- correlation.output.dir
+}
+
+tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_recsuppregions_LODscores.txt", sep = ""), head = TRUE)
+trait.list <- as.character(unique(tabular.summary[,1]))
 
 #Source in the modified GAPIT files
 setwd(paste(home.dir,location.of.modified.GAPIT.files,sep = ""))
@@ -346,21 +345,28 @@ source("GAPIT.HapMap.Modified.R")
 source("GAPIT.Numericalization.Modified.R")
 setwd(home.dir)
 
-#absolute.final.data.set.FPKM <- read.table(paste(home.dir,FPKM.file.dir,"FPKM.table.by.gene.annotation.complete.founder.matrix.txt", sep = ""), head = TRUE)
+#Read in the appropriate files
+absolute.final.data.set.FPKM <- read.table(paste(home.dir,FPKM.file.dir,"FPKM.table.by.gene.ann.complete.matrix.FPKMthreshold.1_filter.by.kernel_across_all.samples.log2trans.txt", sep = ""), head = TRUE)
+nfam_perTimePt = c(19,19,17,18,18,17,18,18) #number of families for each time point, in same order iterated through in get.me.my.results (12,16,20,24,30,36,101,202)
 
-#Read in the tabular summary. Please note that this done only to obtain a list of trait names
-tabular.summary <- read.table(paste(home.dir,"\\(16)Generating Robust Files for Group Review\\Adding family info to JL tabulated results_SI01\\Tab_Sum_of_JL_Carots_Results_for_all traits_SI01_compiled.txt", sep = ""), head = TRUE)
+#Get the results we need for both traits
+if(FDR_corr == "genomewide"){
+  for(trait in trait.list){
+    results.test <- get.me.my.results(tabular.summary = tabular.summary, absolute.final.data.set.FPKM = absolute.final.data.set.FPKM, trait = trait)
+    write.table(results.test$the.correlation.results, paste(home.dir, correlation.output.dir,"Correlations.for.",trait,".txt", sep = ""), quote = FALSE, sep = "\t", row.names = FALSE,col.names = TRUE)
+    write.table(results.test$the.P.value.results, paste(home.dir, correlation.output.dir,"Raw.P.values.for.",trait,".txt", sep = ""), quote = FALSE, sep = "\t", row.names = FALSE,col.names = TRUE)
+    write.table(results.test$the.FDR.adj.P.value.results, paste(home.dir, correlation.output.dir,"FDR.Adjusted.P.values.for.",trait,".txt", sep = ""), quote = FALSE, sep = "\t", row.names = FALSE,col.names = TRUE)
+}#end for(trait in unique(tabular.summary[,1]))
+}#end if genomewide
 
-trait.list <- as.character(unique(tabular.summary[,1]))
-
-#For loop through each trait
-for(trait in trait.list){
-  #Read in the raw P-values
+if(FDR_corr == "by_QTL"){
+  for(trait in trait.list){
   setwd(paste(home.dir, correlation.output.dir, sep = ""))
   the.raw.P.values <- read.table(paste("Raw.P.values.for.", trait, ".txt", sep = ""),head = TRUE)
   
   #For each unique QTL
   count <- 0
+  
   for(QTL in unique(the.raw.P.values[,ncol(the.raw.P.values)])){
     #Split up the data so that you only get the results for the QTL under study
     the.raw.P.values.for.this.QTL <- the.raw.P.values[which(the.raw.P.values[,ncol(the.raw.P.values)] == QTL),]
@@ -368,7 +374,7 @@ for(trait in trait.list){
     #Run the FDR correction
     the.FDR.Adjusted.P.values <- GAPIT.Perform.BH.FDR.Multiple.Correction.Procedure.mod(PWI = the.raw.P.values.for.this.QTL[,2:9])
     
-    print(paste("----------------And now, we are calcualting the FDR-adjusted P-values for ", trait, "------------------------", sep = ""))
+    print(paste("----------------And now, we are calculating the FDR-adjusted P-values BY QTL for ", trait, "------------------------", sep = ""))
     
     the.FDR.adj.P.value.results <- cbind(the.raw.P.values.for.this.QTL[,1], the.FDR.Adjusted.P.values, 
                                          the.raw.P.values.for.this.QTL[,10:14])
@@ -383,12 +389,10 @@ for(trait in trait.list){
     }
     count <- count + 1
   }#End for each unique QTL
-
+  
   #Export the FDR-adjusted P-values, adjusted separately for each support interval
   setwd(paste(home.dir, fdr.adjusted.for.each.SI.dir,sep = ""))
   write.table(FDR.adjusted.P.values.for.all.SIs, paste("FDR.Adjusted.P.values.for.",trait,"_by_Q.txt", sep = ""), 
               quote = FALSE, sep = "\t", row.names = FALSE,col.names = TRUE)
-
-  
-}#End for(trait in trait.list)
-
+  }#end if output by QTL
+}#end for trait in trait.list

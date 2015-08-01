@@ -129,7 +129,7 @@ correlate.FPKMs.with.GWAS.SNPs.and.JL.Effect.Estims = function(numeric.GWAS.SNPs
   
   ##################################################################################################################################################################
   #Correlate FPKM values with allelic effect estimates. output file will have genes in rows, time points in columns
-  print(paste("Now correlating FPKMs with JL allelic effect estimates for trait",trait," and common SI",q,sep=''))
+  print(paste("Now correlating FPKMs with GWAS SNPs for trait",trait," and common SI",q,sep=''))
   count <- 0
   for(i in list.of.gene.GRZMs.in.support.interval){
     #Correlate FPKM from each time point with JL QTL effect estimates. Use Generating_uniform_FPKM_matrix.r in this step
@@ -203,12 +203,9 @@ if(trait.set == "Carot"){
   get.me.my.SNPs.files.dir <- "\\(15)Correlated Expression\\JL_GWAS_FPKM_overlap_analysis_2015_union\\Results_from_GMMS31_imputed_matrix_T3_2015\\"           # this was changed
   FPKM.file.dir <- "\\(15)Correlated Expression\\"
   expression.dir <- "\\(15)Correlated Expression\\Results_from_R_FPKM1_logtyes\\"
-  lambda.dir = "\\(8b)BLUE Outlier Rem and Trans Redo\\"                       
   numb.common.SI = 39
   max.numb.traits.per.SI = 8
-  
   tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_GWAS_FamPVE_common_SI_recsuppregions_LODscores_20150612.txt", sep = ""), head = TRUE)
-  lambda.values <-read.table(paste(home.dir,lambda.dir,"Carot_BLUE_lambda_values_all.txt", sep = ""), head = TRUE)         #cbk added 7/9/15, note [,1:3] (trait.no, trait.ID, lambda)
 }
 
 if(trait.set == "tocos"){
@@ -222,12 +219,10 @@ if(trait.set == "tocos"){
   dir.for.5.1.matrices <- "/Expression_Analyses/GMMS3.1Results_tocos/ImputedMatricesfrom5.1/"
   FPKM.file.dir <- location.of.modified.GAPIT.files
   expression.dir = "/Expression_Analyses/"
-  lambda.dir = "C:/Users/chd45/Documents/Projects/NAM_GP/Inputs/"
   numb.common.SI = 48
   max.numb.traits.per.SI = 9
   
   tabular.summary <- read.table(paste(home.dir,tabSummary.path,"Tab_Sum_",trait.set,"_alpha.01_SI_with_GWAS_SNPs_common_SI_20150511_recsuppregions_LODscores.txt", sep = ""), head = TRUE)
-  lambda.values <-read.table(paste(lambda.dir,"tocos_BLUE_lambda_values_used_all.txt", sep = ""), head = TRUE)         
 }
 
 #Source in the modified GAPIT files
@@ -325,19 +320,7 @@ for (q in 1:numb.common.SI){
     transformed.effect.estimates.from.QTL <-data.frame(as.character(popID[which(markerID == QTL)]),
                                 as.numeric(effect.estimates.from.entire.trait[which(markerID == QTL), 2]))
     colnames(transformed.effect.estimates.from.QTL) <- c("Population","Trans.Est")
-    
-    #cbk added 7/9/15 to 7-2, adapted 8/1/15 by CHD for 5
-    lambda <- lambda.values[which(lambda.values[,2] == trait),3]
-    scalar <- if(lambda < 0){-1}else{1}  
-    print(paste("Scalar for sign of effect estimates is ",scalar,". If scalar = -1 sign will be flipped, otherwise kept as is.",sep=''))
-    #adjust sign of effects according to lambda transformation scalar               
-    #check signs before
-    print("Checking estimates BEFORE sign changing/not changing.")
-    print(transformed.effect.estimates.from.QTL[1:5,2])
-    transformed.effect.estimates.from.QTL[,2] = transformed.effect.estimates.from.QTL[,2]*scalar
-    print("Checking estimates AFTER sign changing/not changing.")
-    print(transformed.effect.estimates.from.QTL[1:5,2])
-    
+
     transformed.effect.estimates.from.QTL <- merge(transformed.effect.estimates.from.QTL, NAM.pops, by.x = "Population", by.y = "Pop.num")
 
     #Obtain a vector of all of the GRZM ids of the genes within the interval

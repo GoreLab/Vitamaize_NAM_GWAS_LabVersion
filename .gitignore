@@ -1,0 +1,6 @@
+*.log
+*~
+*.pdf
+*.tiff
+*.png
+figures/ld_fig/figure_output/*

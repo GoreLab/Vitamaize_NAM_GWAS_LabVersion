@@ -26,7 +26,6 @@ Core Analysis: determine trait-specific significance thresholds through permutat
 (5) Pleiotropy
 5a - calculate correlations of effect estimates when applying the final JL model for each trait to every other trait, with significance testing. This analysis was as conducted in Brown et al. (2011) with minor adaptation.
 5b - re-format 5a results for visualization and in preparation for plotting.
-5c - plot trait network depicting magnitude and direction of shared genetic basis across traits. An additional minimum level of proportion of shared QTL required for plotting can be imposed at this stage.
 
 (6) Epistasis
 6a - Permutate phenotypes by family to establish significance thresholds; test additive x additive terms; calculate PVE for terms showing significance.

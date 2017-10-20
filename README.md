@@ -33,7 +33,7 @@ Core Analysis: determine trait-specific significance thresholds through permutat
 6b - generate JL model effect estimates (from untransformed BLUEs).
 
 (7) Master gene summaries
-These scripts were used to generate Figures 2 and S5, which show various aspects of the triangulation results for the 14 NAM JL-QTL in which genes were identified. These scripts were used as written by Dan Ilut with minor adaptation.
+Plotting scripts to generate Figures 2 and S5, which show various aspects of the triangulation results for the 14 NAM JL-QTL in which genes were identified. These scripts were used as written by Dan Ilut with minor adaptation.
 
 References:
 Bradbury et al. 2007. "TASSEL: software for association mapping of complex traits in diverse samples." Bioinformatics 23(19):2633-2635. doi: 10.1093/bioinformatics/btm308.

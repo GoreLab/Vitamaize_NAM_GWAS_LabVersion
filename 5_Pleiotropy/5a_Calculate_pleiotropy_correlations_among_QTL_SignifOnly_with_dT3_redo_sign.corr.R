@@ -153,7 +153,7 @@ pleiotropy.calculator.within.supp.int <- function(trait.1, trait.2, threshold, v
        
        #####EXTREMELY IMPORTANT
        #### Uncomment next line if all results are desired with specified significance threshold, removing all markers that have P-value < the threshold
-       cor.results.signif <- as.matrix(cor.results[which(cor.results[,6] < threshold),])
+       cor.results.signif <- as.matrix(cor.results[which(as.numeric(cor.results[,6]) < threshold),])
        #cor.results.signif <- as.matrix(cor.results[which(p.values.cor.results < threshold),])
        #cor.results.signif <- as.matrix(cor.results)
       
